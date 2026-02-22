@@ -41,7 +41,7 @@ body {
 }
 .circle:active { cursor: grabbing; }
 
-/* ── HANDLE ── */
+/* ── HANDLE (rotate) ── */
 .handle {
   position: absolute;
   left: 50%;
@@ -65,6 +65,7 @@ body {
   border: 2px solid #000;
   cursor: grab;
 }
+
 
 /* ── CONSOLE ── */
 .console {

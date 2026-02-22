@@ -28,6 +28,7 @@ circleSlider.addEventListener('input', e => setCircleDensity(+e.target.value));
 let cx  = window.innerWidth  / 2;
 let cy  = window.innerHeight / 2;
 let ang = 0;
+let wheelSize = 220;
 let mode = null;
 let dragOx = 0, dragOy = 0;
 
@@ -38,10 +39,21 @@ function applyTransform() {
 }
 applyTransform();
 
+circle.addEventListener('pointermove', e => {
+  if (mode) return;
+  const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+  circle.style.cursor = dist > wheelSize / 2 - 16 ? 'ew-resize' : 'grab';
+});
+
 circle.addEventListener('pointerdown', e => {
-  mode   = 'drag';
-  dragOx = e.clientX - cx;
-  dragOy = e.clientY - cy;
+  const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+  if (dist > wheelSize / 2 - 16) {
+    mode = 'resize';
+  } else {
+    mode   = 'drag';
+    dragOx = e.clientX - cx;
+    dragOy = e.clientY - cy;
+  }
   circle.setPointerCapture(e.pointerId);
   e.stopPropagation();
   e.preventDefault();
@@ -67,6 +79,12 @@ window.addEventListener('pointermove', e => {
     const dy = e.clientY - cy;
     ang = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
     applyTransform();
+  } else if (mode === 'resize') {
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    wheelSize = Math.max(60, Math.hypot(dx, dy) * 2);
+    wheel.style.width  = wheelSize + 'px';
+    wheel.style.height = wheelSize + 'px';
   }
 });
 
