@@ -1,0 +1,144 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #fff;
+  cursor: crosshair;
+}
+
+/* ── PAGE DOT FIELD ── */
+.field {
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, #000 40%, transparent 41%);
+  background-size: 8px 8px;
+}
+
+/* ── WHEEL WRAPPER ── */
+.wheel {
+  position: fixed;
+  width: 220px;
+  height: 220px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(0deg);
+  user-select: none;
+  touch-action: none;
+}
+
+/* ── CIRCLE ── */
+.circle {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  cursor: grab;
+  background-image: radial-gradient(circle, #000 40%, transparent 41%);
+  background-size: 8px 8px;
+  background-position: 4px 4px;
+  box-shadow: 0 0 0 4px #fff, 0 0 0 7px #000;
+}
+.circle:active { cursor: grabbing; }
+
+/* ── HANDLE ── */
+.handle {
+  position: absolute;
+  left: 50%;
+  top: -44px;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 48px;
+  background: #000;
+  cursor: grab;
+}
+.handle::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #000;
+  cursor: grab;
+}
+
+/* ── CONSOLE ── */
+.console {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 2px solid #000;
+  padding: 16px 22px 14px;
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  user-select: none;
+  /* stop pointer events leaking to page */
+  touch-action: none;
+}
+
+.console-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  min-width: 130px;
+}
+
+.console-label {
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #000;
+  white-space: nowrap;
+}
+
+.console-label span {
+  display: inline-block;
+  min-width: 22px;
+  text-align: right;
+}
+
+/* range track & thumb — pure b&w */
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 130px;
+  height: 2px;
+  background: #000;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #000;
+  cursor: grab;
+}
+input[type=range]::-webkit-slider-thumb:active { cursor: grabbing; }
+input[type=range]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #000;
+  cursor: grab;
+}
+
+/* divider between the two controls */
+.console-divider {
+  width: 1px;
+  height: 50px;
+  background: #000;
+  align-self: center;
+}

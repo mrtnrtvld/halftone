@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Halftone</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="field" id="field"></div>
+
+  <div class="wheel" id="wheel">
+    <div class="circle" id="circle"></div>
+    <div class="handle" id="handle"></div>
+  </div>
+
+  <!-- ── CONSOLE ── -->
+  <div class="console" id="console">
+    <div class="console-row">
+      <div class="console-label">Field &nbsp;<span id="fieldVal">8</span>px</div>
+      <input type="range" id="fieldSlider" min="3" max="30" value="8" step="1">
+    </div>
+    <div class="console-divider"></div>
+    <div class="console-row">
+      <div class="console-label">Circle <span id="circleVal">8</span>px</div>
+      <input type="range" id="circleSlider" min="3" max="30" value="8" step="1">
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+
+</body>
+</html>
