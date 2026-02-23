@@ -19,29 +19,48 @@ body {
 /* ── WHEEL WRAPPER ── */
 .wheel {
   position: fixed;
-  width: 220px;
-  height: 220px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(0deg);
   user-select: none;
   touch-action: none;
 }
 
-/* ── CIRCLE ── */
-.circle {
+/* ── SHAPES ── */
+.shape {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
   cursor: grab;
   background-image: radial-gradient(circle, #000 40%, transparent 41%);
   background-size: 8px 8px;
   background-position: 4px 4px;
+}
+.shape:active { cursor: grabbing; }
+
+.shape.circle {
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(255,255,255,0), 0 0 0 7px rgba(0,0,0,0);
+  transition: box-shadow 0.2s ease;
+}
+
+.shape.square {
+  box-shadow: 0 0 0 4px rgba(255,255,255,0), 0 0 0 7px rgba(0,0,0,0);
+  transition: box-shadow 0.2s ease;
+}
+
+.shape.triangle {
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  filter: drop-shadow(0 0 5px rgba(0,0,0,0));
+  transition: filter 0.2s ease;
+}
+
+.wheel.hovered .shape.circle,
+.wheel.hovered .shape.square {
   box-shadow: 0 0 0 4px #fff, 0 0 0 7px #000;
 }
-.circle:active { cursor: grabbing; }
 
-/* ── HANDLE (rotate) ── */
+.wheel.hovered .shape.triangle {
+  filter: drop-shadow(0 0 5px rgba(0,0,0,0.85));
+}
+
+/* ── HANDLE ── */
 .handle {
   position: absolute;
   left: 50%;
@@ -66,42 +85,64 @@ body {
   cursor: grab;
 }
 
-
-/* ── CONSOLE ── */
-.console {
+/* ── RIGHT PANEL ── */
+.panel {
   position: fixed;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #fff;
-  border: 2px solid #000;
-  padding: 16px 22px 14px;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
-  gap: 32px;
-  align-items: flex-start;
+  align-items: stretch;
+  z-index: 20;
   user-select: none;
-  /* stop pointer events leaking to page */
   touch-action: none;
 }
 
-.console-row {
+.panel-toggle {
+  width: 24px;
+  background: #fff;
+  border: 2px solid #000;
+  border-right: none;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 10px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.panel.collapsed .panel-toggle {
+  border-right: 2px solid #000;
+}
+
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #fff;
+  border: 2px solid #000;
+  border-left: none;
+  padding: 20px 16px;
+}
+
+.panel.collapsed .panel-body {
+  display: none;
+}
+
+.panel-row {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  align-items: center;
-  min-width: 130px;
 }
 
-.console-label {
+.panel-label {
   font-family: monospace;
   font-size: 10px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #000;
   white-space: nowrap;
 }
 
-.console-label span {
+.panel-label span {
   display: inline-block;
   min-width: 22px;
   text-align: right;
@@ -136,10 +177,78 @@ input[type=range]::-moz-range-thumb {
   cursor: grab;
 }
 
-/* divider between the two controls */
-.console-divider {
-  width: 1px;
-  height: 50px;
+.panel-divider {
+  height: 1px;
   background: #000;
-  align-self: center;
+  margin: 0 -16px;
+}
+
+.shape-btn {
+  background: #fff;
+  border: 2px solid #000;
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.shape-btn:hover {
+  background: #000;
+  color: #fff;
+}
+
+/* ── PROPERTY BOX ── */
+.prop-box {
+  position: fixed;
+  z-index: 30;
+  background: #fff;
+  border: 2px solid #000;
+  padding: 14px 16px 12px;
+  flex-direction: column;
+  gap: 8px;
+  display: none;
+  user-select: none;
+  touch-action: none;
+}
+.prop-box.open {
+  display: flex;
+}
+
+.prop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.prop-label {
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.prop-label span {
+  display: inline-block;
+  min-width: 22px;
+  text-align: right;
+}
+
+.prop-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+  color: #000;
+  flex-shrink: 0;
+}
+.prop-close:hover {
+  opacity: 0.5;
 }
