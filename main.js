@@ -3,10 +3,37 @@ const field       = document.getElementById('field');
 const fieldSlider = document.getElementById('fieldSlider');
 const fieldVal    = document.getElementById('fieldVal');
 
+let fieldPattern = 'dots';
+
+function applyFieldPattern() {
+  const px = +fieldSlider.value;
+  if (fieldPattern === 'dots') {
+    field.style.backgroundImage = `radial-gradient(circle, #000 40%, transparent 41%)`;
+    field.style.backgroundSize  = `${px}px ${px}px`;
+  } else {
+    const lw = Math.max(1, Math.round(px * 0.4));
+    field.style.backgroundImage = `repeating-linear-gradient(0deg, #000 0px, #000 ${lw}px, transparent ${lw}px, transparent ${px}px)`;
+    field.style.backgroundSize  = 'auto';
+  }
+}
+
 fieldSlider.addEventListener('input', e => {
-  const px = +e.target.value;
-  field.style.backgroundSize = `${px}px ${px}px`;
-  fieldVal.textContent = px;
+  fieldVal.textContent = e.target.value;
+  applyFieldPattern();
+});
+
+document.getElementById('fieldDots').addEventListener('click', () => {
+  fieldPattern = 'dots';
+  document.getElementById('fieldDots').classList.add('active');
+  document.getElementById('fieldLines').classList.remove('active');
+  applyFieldPattern();
+});
+
+document.getElementById('fieldLines').addEventListener('click', () => {
+  fieldPattern = 'lines';
+  document.getElementById('fieldLines').classList.add('active');
+  document.getElementById('fieldDots').classList.remove('active');
+  applyFieldPattern();
 });
 
 // ── Panel toggle ──
@@ -57,6 +84,7 @@ function createShape(type) {
     dragOx:  0,
     dragOy:  0,
     type,
+    pattern: 'dots',
     visible: true,
     wheel:   null,   // assigned below
     propBox: null,   // assigned below
@@ -104,7 +132,36 @@ function createShape(type) {
   propSlider.value = String(s.density);
   propSlider.step  = '1';
 
-  propBox.append(propHeader, propSlider);
+  const propPatternBtns = document.createElement('div');
+  propPatternBtns.className = 'pattern-btns';
+
+  const propDotBtn  = document.createElement('button');
+  propDotBtn.className   = 'pattern-btn active';
+  const propDotIcon = document.createElement('span');
+  propDotIcon.className  = 'pattern-icon dots';
+  propDotBtn.append(propDotIcon);
+
+  const propLineBtn  = document.createElement('button');
+  propLineBtn.className  = 'pattern-btn';
+  const propLineIcon = document.createElement('span');
+  propLineIcon.className = 'pattern-icon lines';
+  propLineBtn.append(propLineIcon);
+
+  propDotBtn.addEventListener('click', () => {
+    s.pattern = 'dots';
+    propDotBtn.classList.add('active');
+    propLineBtn.classList.remove('active');
+    applyShapePattern();
+  });
+  propLineBtn.addEventListener('click', () => {
+    s.pattern = 'lines';
+    propLineBtn.classList.add('active');
+    propDotBtn.classList.remove('active');
+    applyShapePattern();
+  });
+
+  propPatternBtns.append(propDotBtn, propLineBtn);
+  propBox.append(propHeader, propSlider, propPatternBtns);
   document.body.append(propBox);
   s.propBox = propBox;
 
@@ -192,13 +249,26 @@ function createShape(type) {
     updateZIndices();
   });
 
-  // ── Density ──
+  // ── Density / pattern ──
+  function applyShapePattern() {
+    const px = s.density;
+    if (s.pattern === 'dots') {
+      const offset = (px / 2).toFixed(1);
+      shapeEl.style.backgroundImage    = `radial-gradient(circle, #000 40%, transparent 41%)`;
+      shapeEl.style.backgroundSize     = `${px}px ${px}px`;
+      shapeEl.style.backgroundPosition = `${offset}px ${offset}px`;
+    } else {
+      const lw = Math.max(1, Math.round(px * 0.4));
+      shapeEl.style.backgroundImage    = `repeating-linear-gradient(0deg, #000 0px, #000 ${lw}px, transparent ${lw}px, transparent ${px}px)`;
+      shapeEl.style.backgroundSize     = 'auto';
+      shapeEl.style.backgroundPosition = '0 0';
+    }
+  }
+
   function setDensity(px) {
-    const offset = (px / 2).toFixed(1);
-    shapeEl.style.backgroundSize     = `${px}px ${px}px`;
-    shapeEl.style.backgroundPosition = `${offset}px ${offset}px`;
     s.density            = px;
     propSpan.textContent = px;
+    applyShapePattern();
   }
   setDensity(s.density);
 
