@@ -64,25 +64,19 @@ body {
 .handle {
   position: absolute;
   left: 50%;
-  top: -44px;
-  transform: translateX(-50%);
-  width: 2px;
-  height: 48px;
-  background: #000;
-  cursor: grab;
-}
-.handle::after {
-  content: '';
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 10px;
+  transform: translate(-50%, -50%);
   width: 18px;
   height: 18px;
   border-radius: 50%;
   background: #fff;
   border: 2px solid #000;
   cursor: grab;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.wheel.hovered .handle {
+  opacity: 1;
 }
 
 /* ── RIGHT PANEL ── */
@@ -122,6 +116,8 @@ body {
   border: 2px solid #000;
   border-left: none;
   padding: 20px 16px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 
 .panel.collapsed .panel-body {
@@ -183,22 +179,104 @@ input[type=range]::-moz-range-thumb {
   margin: 0 -16px;
 }
 
+/* ── ADD SHAPE ROW ── */
+.shape-add-row {
+  display: flex;
+  gap: 8px;
+}
+
 .shape-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #fff;
   border: 2px solid #000;
-  font-family: monospace;
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  padding: 7px 12px;
   cursor: pointer;
-  text-align: left;
-  width: 100%;
+  padding: 0;
+  flex-shrink: 0;
 }
 .shape-btn:hover {
   background: #000;
-  color: #fff;
 }
+
+.add-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background: #000;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.add-icon.circle   { border-radius: 50%; }
+.add-icon.triangle { clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+.shape-btn:hover .add-icon { background: #fff; }
+
+/* ── LAYERS LIST ── */
+.layers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 8px;
+}
+
+.layer-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+.layer-entry.dragging  { opacity: 0.35; }
+.layer-entry.drag-over { outline: 1px solid #000; outline-offset: 1px; }
+
+/* dot-grid drag handle */
+.layer-drag {
+  width: 8px;
+  height: 12px;
+  cursor: grab;
+  flex-shrink: 0;
+  background-image: radial-gradient(circle, #000 40%, transparent 41%);
+  background-size: 4px 4px;
+  opacity: 0.35;
+}
+.layer-drag:active { cursor: grabbing; }
+
+.layer-icon {
+  width: 10px;
+  height: 10px;
+  background: #000;
+  flex-shrink: 0;
+}
+.layer-icon.circle   { border-radius: 50%; }
+.layer-icon.triangle { clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+
+.layer-name {
+  font-family: monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layer-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+  color: #000;
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+.layer-btn:hover { opacity: 0.5; }
 
 /* ── PROPERTY BOX ── */
 .prop-box {
@@ -249,6 +327,4 @@ input[type=range]::-moz-range-thumb {
   color: #000;
   flex-shrink: 0;
 }
-.prop-close:hover {
-  opacity: 0.5;
-}
+.prop-close:hover { opacity: 0.5; }

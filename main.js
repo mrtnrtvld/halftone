@@ -21,27 +21,51 @@ panelToggle.addEventListener('click', () => {
 // Stop panel interactions reaching the page
 panel.addEventListener('pointerdown', e => e.stopPropagation());
 
-// ── Shape factory ──
+// ── Shapes & layer ordering ──
 const shapes = [];
+let draggedShape = null;
 
+function updateZIndices() {
+  // shapes[0] = bottom of canvas, shapes[last] = top
+  shapes.forEach((s, i) => {
+    s.wheel.style.zIndex = 10 + i;
+  });
+}
+
+function syncShapesFromDOM() {
+  // Layer list DOM order: first child = visually top entry = canvas front
+  // Rebuild shapes array so shapes[last] = canvas front
+  const list = document.getElementById('layersList');
+  const reordered = [...list.children]
+    .map(el => shapes.find(s => s.listEl === el))
+    .filter(Boolean)
+    .reverse();
+  shapes.length = 0;
+  shapes.push(...reordered);
+}
+
+// ── Shape factory ──
 function createShape(type) {
-  const n = shapes.length;
+  const n = shapes.length;   // capture before push
   const s = {
-    cx:     window.innerWidth  / 2 + n * 30,
-    cy:     window.innerHeight / 2 + n * 20,
-    ang:    0,
-    size:   220,
+    cx:      window.innerWidth  / 2 + n * 30,
+    cy:      window.innerHeight / 2 + n * 20,
+    ang:     0,
+    size:    220,
     density: 8,
-    mode:   null,
-    dragOx: 0,
-    dragOy: 0,
+    mode:    null,
+    dragOx:  0,
+    dragOy:  0,
+    type,
+    visible: true,
+    wheel:   null,   // assigned below
+    propBox: null,   // assigned below
+    listEl:  null,   // assigned below
   };
-  shapes.push(s);
 
   // ── Wheel ──
   const wheel   = document.createElement('div');
   wheel.className   = 'wheel';
-  wheel.style.zIndex = 10 + n;
 
   const shapeEl = document.createElement('div');
   shapeEl.className = `shape ${type}`;
@@ -51,6 +75,7 @@ function createShape(type) {
 
   wheel.append(shapeEl, handle);
   document.body.append(wheel);
+  s.wheel = wheel;
 
   // ── Property box ──
   const propBox    = document.createElement('div');
@@ -81,15 +106,98 @@ function createShape(type) {
 
   propBox.append(propHeader, propSlider);
   document.body.append(propBox);
+  s.propBox = propBox;
 
   propBox.addEventListener('pointerdown', e => e.stopPropagation());
+
+  // ── Layer entry ──
+  const layerEntry = document.createElement('div');
+  layerEntry.className = 'layer-entry';
+  layerEntry.draggable = true;
+
+  const layerDrag = document.createElement('div');
+  layerDrag.className = 'layer-drag';
+
+  const layerIcon = document.createElement('div');
+  layerIcon.className = `layer-icon ${type}`;
+
+  const layerName = document.createElement('span');
+  layerName.className   = 'layer-name';
+  layerName.textContent = type;
+
+  const visBtn = document.createElement('button');
+  visBtn.className   = 'layer-btn';
+  visBtn.textContent = '●';
+  visBtn.title       = 'Toggle visibility';
+  visBtn.addEventListener('click', () => {
+    s.visible = !s.visible;
+    wheel.style.display = s.visible ? '' : 'none';
+    if (!s.visible) propBox.classList.remove('open');
+    visBtn.textContent = s.visible ? '●' : '○';
+  });
+
+  const delBtn = document.createElement('button');
+  delBtn.className   = 'layer-btn';
+  delBtn.textContent = '×';
+  delBtn.title       = 'Delete';
+  delBtn.addEventListener('click', () => {
+    wheel.remove();
+    propBox.remove();
+    layerEntry.remove();
+    const idx = shapes.indexOf(s);
+    if (idx !== -1) shapes.splice(idx, 1);
+    updateZIndices();
+  });
+
+  layerEntry.append(layerDrag, layerIcon, layerName, visBtn, delBtn);
+  s.listEl = layerEntry;
+
+  // ── Layer drag-and-drop ──
+  layerEntry.addEventListener('dragstart', e => {
+    draggedShape = s;
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => layerEntry.classList.add('dragging'), 0);
+  });
+
+  layerEntry.addEventListener('dragend', () => {
+    layerEntry.classList.remove('dragging');
+    draggedShape = null;
+  });
+
+  layerEntry.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    layerEntry.classList.add('drag-over');
+  });
+
+  layerEntry.addEventListener('dragleave', e => {
+    if (!layerEntry.contains(e.relatedTarget)) {
+      layerEntry.classList.remove('drag-over');
+    }
+  });
+
+  layerEntry.addEventListener('drop', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    layerEntry.classList.remove('drag-over');
+    if (!draggedShape || draggedShape === s) return;
+    const list = document.getElementById('layersList');
+    const rect = layerEntry.getBoundingClientRect();
+    if (e.clientY < rect.top + rect.height / 2) {
+      list.insertBefore(draggedShape.listEl, layerEntry);
+    } else {
+      list.insertBefore(draggedShape.listEl, layerEntry.nextSibling);
+    }
+    syncShapesFromDOM();
+    updateZIndices();
+  });
 
   // ── Density ──
   function setDensity(px) {
     const offset = (px / 2).toFixed(1);
     shapeEl.style.backgroundSize     = `${px}px ${px}px`;
     shapeEl.style.backgroundPosition = `${offset}px ${offset}px`;
-    s.density          = px;
+    s.density            = px;
     propSpan.textContent = px;
   }
   setDensity(s.density);
@@ -98,9 +206,8 @@ function createShape(type) {
 
   // ── Transform ──
   function updatePropBoxPosition() {
-    // Calculate the handle knob's world position
     const rad  = s.ang * Math.PI / 180;
-    const dist = s.size / 2 + 45;           // radius + handle stem to knob centre
+    const dist = s.size / 2 - 10;  // knob centre is 10px from wheel top
     const kx   = s.cx + dist * Math.sin(rad);
     const ky   = s.cy - dist * Math.cos(rad);
     propBox.style.left = (kx + 14) + 'px';
@@ -117,9 +224,9 @@ function createShape(type) {
   }
   applyTransform();
 
-  // ── Hover: fade outline in/out ──
-  shapeEl.addEventListener('pointerenter', () => wheel.classList.add('hovered'));
-  shapeEl.addEventListener('pointerleave', () => wheel.classList.remove('hovered'));
+  // ── Hover: fade outline + handle ──
+  wheel.addEventListener('pointerenter', () => wheel.classList.add('hovered'));
+  wheel.addEventListener('pointerleave', () => wheel.classList.remove('hovered'));
 
   // ── Cursor hint: edge = resize ──
   shapeEl.addEventListener('pointermove', e => {
@@ -178,6 +285,11 @@ function createShape(type) {
   });
 
   window.addEventListener('pointerup', () => { s.mode = null; });
+
+  // ── Register: new shapes go to front ──
+  shapes.push(s);
+  document.getElementById('layersList').prepend(s.listEl);
+  updateZIndices();
 }
 
 // ── Shape buttons ──
