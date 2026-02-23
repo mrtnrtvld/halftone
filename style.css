@@ -367,3 +367,128 @@ input[type=range]::-moz-range-thumb {
   flex-shrink: 0;
 }
 .prop-close:hover { opacity: 0.5; }
+
+/* ── BLANK FIELD ICON ── */
+.pattern-icon.blank {
+  background: none;
+}
+
+/* ── SAVE ── */
+.save-row {
+  display: flex;
+  gap: 8px;
+  width: 130px;
+}
+
+.save-btn {
+  flex: 1;
+  height: 26px;
+  background: #fff;
+  border: 2px solid #000;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 0;
+}
+.save-btn:hover {
+  background: #000;
+  color: #fff;
+}
+
+/* ── INFO BUTTON ── */
+.info-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: none;
+  border: 2px solid #000;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 10px;
+  font-style: italic;
+  line-height: 1;
+  padding: 0;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+}
+.info-btn:hover { opacity: 0.5; }
+
+/* ── INFO MODAL ── */
+.info-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.45);
+  align-items: center;
+  justify-content: center;
+}
+.info-modal.open {
+  display: flex;
+}
+
+.info-inner {
+  background: #fff;
+  border: 2px solid #000;
+  padding: 24px 28px 20px;
+  max-width: 380px;
+  width: calc(100% - 40px);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.info-title {
+  font-family: monospace;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.info-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  color: #000;
+}
+.info-close:hover { opacity: 0.5; }
+
+.info-lead {
+  margin: 0 0 4px;
+  font-size: 11px;
+}
+
+.info-inner h3 {
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin: 6px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid #000;
+}
+
+.info-inner p {
+  margin: 0;
+}

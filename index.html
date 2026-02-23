@@ -21,6 +21,7 @@
         <div class="pattern-btns">
           <button class="pattern-btn active" id="fieldDots"><span class="pattern-icon dots"></span></button>
           <button class="pattern-btn" id="fieldLines"><span class="pattern-icon lines"></span></button>
+          <button class="pattern-btn" id="fieldBlank"><span class="pattern-icon blank"></span></button>
         </div>
       </div>
 
@@ -44,6 +45,54 @@
       <div class="panel-label">Layers</div>
       <div class="layers-list" id="layersList"></div>
 
+      <div class="panel-divider"></div>
+
+      <div class="panel-label">Save</div>
+      <div class="save-row">
+        <button class="save-btn" id="savePng">PNG</button>
+        <button class="save-btn" id="saveSvg">SVG</button>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <button class="info-btn" id="infoBtn">i</button>
+
+    </div>
+  </div>
+
+  <!-- ── INFO MODAL ── -->
+  <div class="info-modal" id="infoModal">
+    <div class="info-inner">
+      <div class="info-header">
+        <span class="info-title">Halftone</span>
+        <button class="info-close" id="infoClose">×</button>
+      </div>
+      <p class="info-lead">Compose layered halftone patterns using geometric shapes.</p>
+
+      <h3>Field</h3>
+      <p>The background pattern covering the whole canvas. Use the slider to adjust dot or line spacing, and switch between dots, lines, or blank.</p>
+
+      <h3>Adding shapes</h3>
+      <p>Click the circle, square, or triangle buttons in the panel to add a shape to the canvas.</p>
+
+      <h3>Moving</h3>
+      <p>Drag the interior of any shape to reposition it.</p>
+
+      <h3>Resizing</h3>
+      <p>Drag near the edge of a shape to resize it. On a square, drag the left or right edge to change width, or the top or bottom edge to change height — making it a rectangle.</p>
+
+      <h3>Rotating</h3>
+      <p>Hover over a shape to reveal the circular handle near its top edge. Drag the handle to rotate the shape freely.</p>
+
+      <h3>Density &amp; pattern</h3>
+      <p>Double-click the circular handle to open the property box for that shape. Adjust the slider to change dot or line spacing, and click the pattern buttons to switch between dots and lines.</p>
+
+      <h3>Layers</h3>
+      <p>Each shape is listed under Layers. The top entry is the frontmost shape. Drag entries to reorder. Click ● to toggle visibility, × to delete.</p>
+
+      <h3>Saving</h3>
+      <p><strong>PNG</strong> — exports a raster image; white areas are saved as transparent.<br>
+      <strong>SVG</strong> — exports a scalable vector file with transparent background.</p>
     </div>
   </div>
 

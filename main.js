@@ -7,7 +7,10 @@ let fieldPattern = 'dots';
 
 function applyFieldPattern() {
   const px = +fieldSlider.value;
-  if (fieldPattern === 'dots') {
+  if (fieldPattern === 'blank') {
+    field.style.backgroundImage = 'none';
+    field.style.backgroundSize  = 'auto';
+  } else if (fieldPattern === 'dots') {
     field.style.backgroundImage = `radial-gradient(circle, #000 40%, transparent 41%)`;
     field.style.backgroundSize  = `${px}px ${px}px`;
   } else {
@@ -22,19 +25,17 @@ fieldSlider.addEventListener('input', e => {
   applyFieldPattern();
 });
 
-document.getElementById('fieldDots').addEventListener('click', () => {
-  fieldPattern = 'dots';
-  document.getElementById('fieldDots').classList.add('active');
-  document.getElementById('fieldLines').classList.remove('active');
+function setFieldPattern(p) {
+  fieldPattern = p;
+  ['fieldDots', 'fieldLines', 'fieldBlank'].forEach(id => {
+    document.getElementById(id).classList.toggle('active', id === 'field' + p.charAt(0).toUpperCase() + p.slice(1));
+  });
   applyFieldPattern();
-});
+}
 
-document.getElementById('fieldLines').addEventListener('click', () => {
-  fieldPattern = 'lines';
-  document.getElementById('fieldLines').classList.add('active');
-  document.getElementById('fieldDots').classList.remove('active');
-  applyFieldPattern();
-});
+document.getElementById('fieldDots').addEventListener('click',  () => setFieldPattern('dots'));
+document.getElementById('fieldLines').addEventListener('click', () => setFieldPattern('lines'));
+document.getElementById('fieldBlank').addEventListener('click', () => setFieldPattern('blank'));
 
 // ── Panel toggle ──
 const panel       = document.getElementById('panel');
@@ -415,5 +416,145 @@ document.querySelectorAll('.shape-btn').forEach(btn => {
   btn.addEventListener('click', () => createShape(btn.dataset.shape));
 });
 
-// ── Initial circle ──
-createShape('circle');
+// ── Export helpers ──
+
+function drawHalftonePattern(ctx, pattern, density, x, y, w, h) {
+  const tile = document.createElement('canvas');
+  tile.width  = density;
+  tile.height = density;
+  const tc = tile.getContext('2d');
+  tc.fillStyle = '#000';
+  if (pattern === 'dots') {
+    tc.beginPath();
+    tc.arc(density / 2, density / 2, density * 0.2, 0, Math.PI * 2);
+    tc.fill();
+  } else {
+    const lw = Math.max(1, Math.round(density * 0.4));
+    tc.fillRect(0, 0, density, lw);
+  }
+  const pat = ctx.createPattern(tile, 'repeat');
+  ctx.fillStyle = pat;
+  ctx.fillRect(x, y, w, h);
+}
+
+function renderToCanvas(canvas) {
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+
+  if (fieldPattern !== 'blank') {
+    const fpx = +fieldSlider.value;
+    drawHalftonePattern(ctx, fieldPattern, fpx, 0, 0, W, H);
+  }
+
+  for (const s of shapes) {
+    if (!s.visible) continue;
+    ctx.save();
+    ctx.translate(s.cx, s.cy);
+    ctx.rotate(s.ang * Math.PI / 180);
+
+    ctx.beginPath();
+    if (s.type === 'circle') {
+      ctx.arc(0, 0, s.width / 2, 0, Math.PI * 2);
+    } else if (s.type === 'square') {
+      ctx.rect(-s.width / 2, -s.height / 2, s.width, s.height);
+    } else {
+      ctx.moveTo(0, -s.height / 2);
+      ctx.lineTo(-s.width / 2, s.height / 2);
+      ctx.lineTo(s.width / 2, s.height / 2);
+      ctx.closePath();
+    }
+    ctx.clip();
+
+    // white fill covers field pattern beneath, then shape pattern draws on top
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(-s.width / 2, -s.height / 2, s.width, s.height);
+    drawHalftonePattern(ctx, s.pattern, s.density, -s.width / 2, -s.height / 2, s.width, s.height);
+
+    ctx.restore();
+  }
+}
+
+document.getElementById('savePng').addEventListener('click', () => {
+  const canvas = document.createElement('canvas');
+  renderToCanvas(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i] > 240 && d[i + 1] > 240 && d[i + 2] > 240) d[i + 3] = 0;
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  canvas.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'halftone.png';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }, 'image/png');
+});
+
+document.getElementById('saveSvg').addEventListener('click', () => {
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+
+  function patDef(id, pattern, density, tx, ty) {
+    const r  = (density * 0.2).toFixed(2);
+    const lw = Math.max(1, Math.round(density * 0.4));
+    const inner = pattern === 'dots'
+      ? `<circle cx="${density / 2}" cy="${density / 2}" r="${r}" fill="#000"/>`
+      : `<rect x="0" y="0" width="${density}" height="${lw}" fill="#000"/>`;
+    const xform = (tx || ty) ? ` patternTransform="translate(${tx},${ty})"` : '';
+    return `<pattern id="${id}" width="${density}" height="${density}" patternUnits="userSpaceOnUse"${xform}>${inner}</pattern>`;
+  }
+
+  let defs = '<defs>';
+  let body = '';
+
+  if (fieldPattern !== 'blank') {
+    const fpx = +fieldSlider.value;
+    defs += patDef('fp', fieldPattern, fpx, 0, 0);
+    body += `<rect width="${W}" height="${H}" fill="url(#fp)"/>`;
+  }
+
+  shapes.forEach((s, i) => {
+    if (!s.visible) return;
+    defs += patDef(`sp${i}`, s.pattern, s.density, 0, 0);
+
+    const t = `translate(${s.cx.toFixed(1)},${s.cy.toFixed(1)}) rotate(${s.ang.toFixed(2)})`;
+    let el = '';
+    if (s.type === 'circle') {
+      el = `<circle cx="0" cy="0" r="${(s.width / 2).toFixed(1)}" fill="url(#sp${i})"/>`;
+    } else if (s.type === 'square') {
+      const hw = (s.width / 2).toFixed(1), hh = (s.height / 2).toFixed(1);
+      el = `<rect x="-${hw}" y="-${hh}" width="${s.width.toFixed(1)}" height="${s.height.toFixed(1)}" fill="url(#sp${i})"/>`;
+    } else {
+      const hw = (s.width / 2).toFixed(1), hh = (s.height / 2).toFixed(1);
+      el = `<polygon points="0,-${hh} -${hw},${hh} ${hw},${hh}" fill="url(#sp${i})"/>`;
+    }
+    body += `<g transform="${t}">${el}</g>`;
+  });
+
+  defs += '</defs>';
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">\n${defs}\n${body}\n</svg>`;
+
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'halftone.svg';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// ── Info modal ──
+const infoModal = document.getElementById('infoModal');
+document.getElementById('infoBtn').addEventListener('click',   () => infoModal.classList.add('open'));
+document.getElementById('infoClose').addEventListener('click', () => infoModal.classList.remove('open'));
+infoModal.addEventListener('click', e => { if (e.target === infoModal) infoModal.classList.remove('open'); });
