@@ -1,27 +1,33 @@
 // ── Field ──
-const field       = document.getElementById('field');
-const fieldSlider = document.getElementById('fieldSlider');
-const fieldVal    = document.getElementById('fieldVal');
+const field            = document.getElementById('field');
+const fieldSizeSlider  = document.getElementById('fieldSizeSlider');
+const fieldSizeVal     = document.getElementById('fieldSizeVal');
+const fieldGapSlider   = document.getElementById('fieldGapSlider');
+const fieldGapVal      = document.getElementById('fieldGapVal');
 
 let fieldPattern = 'dots';
 
 function applyFieldPattern() {
-  const px = +fieldSlider.value;
+  const size    = +fieldSizeSlider.value;
+  const spacing = +fieldGapSlider.value;
   if (fieldPattern === 'blank') {
     field.style.backgroundImage = 'none';
     field.style.backgroundSize  = 'auto';
   } else if (fieldPattern === 'dots') {
-    field.style.backgroundImage = `radial-gradient(circle, #000 40%, transparent 41%)`;
-    field.style.backgroundSize  = `${px}px ${px}px`;
+    field.style.backgroundImage = `radial-gradient(circle ${size / 2}px at center, #000 99%, transparent 100%)`;
+    field.style.backgroundSize  = `${spacing}px ${spacing}px`;
   } else {
-    const lw = Math.max(1, Math.round(px * 0.4));
-    field.style.backgroundImage = `repeating-linear-gradient(0deg, #000 0px, #000 ${lw}px, transparent ${lw}px, transparent ${px}px)`;
+    field.style.backgroundImage = `repeating-linear-gradient(0deg, #000 0px, #000 ${size}px, transparent ${size}px, transparent ${spacing}px)`;
     field.style.backgroundSize  = 'auto';
   }
 }
 
-fieldSlider.addEventListener('input', e => {
-  fieldVal.textContent = e.target.value;
+fieldSizeSlider.addEventListener('input', e => {
+  fieldSizeVal.textContent = e.target.value;
+  applyFieldPattern();
+});
+fieldGapSlider.addEventListener('input', e => {
+  fieldGapVal.textContent = e.target.value;
   applyFieldPattern();
 });
 
@@ -52,6 +58,13 @@ panel.addEventListener('pointerdown', e => e.stopPropagation());
 // ── Shapes & layer ordering ──
 const shapes = [];
 let draggedShape = null;
+let selected     = null;
+
+function selectShape(sh) {
+  if (selected) selected.wheel.classList.remove('selected');
+  selected = sh;
+  if (selected) selected.wheel.classList.add('selected');
+}
 
 function updateZIndices() {
   // shapes[0] = bottom of canvas, shapes[last] = top
@@ -82,12 +95,15 @@ function createShape(type) {
     width:      220,
     height:     220,
     resizeEdge: '',
-    density:    8,
+    dotSize:    4,
+    spacing:    8,
     mode:       null,
     dragOx:     0,
     dragOy:     0,
     type,
     pattern: 'dots',
+    solidBg:  false,
+    inverted: false,
     visible: true,
     wheel:   null,   // assigned below
     propBox: null,   // assigned below
@@ -112,28 +128,50 @@ function createShape(type) {
   const propBox    = document.createElement('div');
   propBox.className = 'prop-box';
 
-  const propSpan   = document.createElement('span');
-  propSpan.textContent = s.density;
-
-  const propLabel  = document.createElement('div');
-  propLabel.className = 'prop-label';
-  propLabel.append('Density\u00a0', propSpan, '\u00a0px');
-
   const propClose  = document.createElement('button');
   propClose.className   = 'prop-close';
   propClose.textContent = '×';
   propClose.addEventListener('click', () => propBox.classList.remove('open'));
 
+  const propTitle  = document.createElement('div');
+  propTitle.className   = 'prop-label';
+  propTitle.textContent = 'Halftone';
+
   const propHeader = document.createElement('div');
   propHeader.className = 'prop-header';
-  propHeader.append(propLabel, propClose);
+  propHeader.append(propTitle, propClose);
 
-  const propSlider = document.createElement('input');
-  propSlider.type  = 'range';
-  propSlider.min   = '3';
-  propSlider.max   = '30';
-  propSlider.value = String(s.density);
-  propSlider.step  = '1';
+  // Size row
+  const propSizeSpan   = document.createElement('span');
+  propSizeSpan.textContent = s.dotSize;
+  const propSizeLabel  = document.createElement('div');
+  propSizeLabel.className = 'prop-label';
+  propSizeLabel.append('Size\u00a0', propSizeSpan);
+  const propSizeSlider = document.createElement('input');
+  propSizeSlider.type  = 'range';
+  propSizeSlider.min   = '1';
+  propSizeSlider.max   = '20';
+  propSizeSlider.value = String(s.dotSize);
+  propSizeSlider.step  = '1';
+  const propSizeRow    = document.createElement('div');
+  propSizeRow.className = 'prop-slider-row';
+  propSizeRow.append(propSizeLabel, propSizeSlider);
+
+  // Gap row
+  const propGapSpan   = document.createElement('span');
+  propGapSpan.textContent = s.spacing;
+  const propGapLabel  = document.createElement('div');
+  propGapLabel.className = 'prop-label';
+  propGapLabel.append('Gap\u00a0', propGapSpan);
+  const propGapSlider = document.createElement('input');
+  propGapSlider.type  = 'range';
+  propGapSlider.min   = '2';
+  propGapSlider.max   = '40';
+  propGapSlider.value = String(s.spacing);
+  propGapSlider.step  = '1';
+  const propGapRow    = document.createElement('div');
+  propGapRow.className = 'prop-slider-row';
+  propGapRow.append(propGapLabel, propGapSlider);
 
   const propPatternBtns = document.createElement('div');
   propPatternBtns.className = 'pattern-btns';
@@ -164,7 +202,35 @@ function createShape(type) {
   });
 
   propPatternBtns.append(propDotBtn, propLineBtn);
-  propBox.append(propHeader, propSlider, propPatternBtns);
+
+  // BG and invert toggles
+  const propToggleRow = document.createElement('div');
+  propToggleRow.className = 'prop-toggle-row';
+
+  const bgBtn = document.createElement('button');
+  bgBtn.className   = 'prop-toggle';
+  bgBtn.textContent = '■';
+  bgBtn.title       = 'Solid background';
+
+  const invBtn = document.createElement('button');
+  invBtn.className   = 'prop-toggle';
+  invBtn.textContent = '◑';
+  invBtn.title       = 'Invert colours';
+
+  bgBtn.addEventListener('click', () => {
+    s.solidBg = !s.solidBg;
+    bgBtn.classList.toggle('active', s.solidBg);
+    applyShapePattern();
+  });
+
+  invBtn.addEventListener('click', () => {
+    s.inverted = !s.inverted;
+    invBtn.classList.toggle('active', s.inverted);
+    applyShapePattern();
+  });
+
+  propToggleRow.append(bgBtn, invBtn);
+  propBox.append(propHeader, propSizeRow, propGapRow, propPatternBtns, propToggleRow);
   document.body.append(propBox);
   s.propBox = propBox;
 
@@ -196,18 +262,21 @@ function createShape(type) {
     visBtn.textContent = s.visible ? '●' : '○';
   });
 
+  function deleteShape() {
+    if (selected === s) selectShape(null);
+    wheel.remove();
+    propBox.remove();
+    s.listEl.remove();
+    const idx = shapes.indexOf(s);
+    if (idx !== -1) shapes.splice(idx, 1);
+    updateZIndices();
+  }
+
   const delBtn = document.createElement('button');
   delBtn.className   = 'layer-btn';
   delBtn.textContent = '×';
   delBtn.title       = 'Delete';
-  delBtn.addEventListener('click', () => {
-    wheel.remove();
-    propBox.remove();
-    layerEntry.remove();
-    const idx = shapes.indexOf(s);
-    if (idx !== -1) shapes.splice(idx, 1);
-    updateZIndices();
-  });
+  delBtn.addEventListener('click', deleteShape);
 
   layerEntry.append(layerDrag, layerIcon, layerName, visBtn, delBtn);
   s.listEl = layerEntry;
@@ -254,28 +323,36 @@ function createShape(type) {
 
   // ── Density / pattern ──
   function applyShapePattern() {
-    const px = s.density;
+    const size    = s.dotSize;
+    const spacing = s.spacing;
+    const ink = s.inverted ? '#fff' : '#000';
+    const bg  = !s.solidBg ? 'transparent' : (s.inverted ? '#000' : '#fff');
+
+    shapeEl.style.backgroundColor = bg;
+
     if (s.pattern === 'dots') {
-      const offset = (px / 2).toFixed(1);
-      shapeEl.style.backgroundImage    = `radial-gradient(circle, #000 40%, transparent 41%)`;
-      shapeEl.style.backgroundSize     = `${px}px ${px}px`;
+      const offset = (spacing / 2).toFixed(1);
+      shapeEl.style.backgroundImage    = `radial-gradient(circle ${size / 2}px at center, ${ink} 99%, transparent 100%)`;
+      shapeEl.style.backgroundSize     = `${spacing}px ${spacing}px`;
       shapeEl.style.backgroundPosition = `${offset}px ${offset}px`;
     } else {
-      const lw = Math.max(1, Math.round(px * 0.4));
-      shapeEl.style.backgroundImage    = `repeating-linear-gradient(0deg, #000 0px, #000 ${lw}px, transparent ${lw}px, transparent ${px}px)`;
+      shapeEl.style.backgroundImage    = `repeating-linear-gradient(0deg, ${ink} 0px, ${ink} ${size}px, transparent ${size}px, transparent ${spacing}px)`;
       shapeEl.style.backgroundSize     = 'auto';
       shapeEl.style.backgroundPosition = '0 0';
     }
   }
 
-  function setDensity(px) {
-    s.density            = px;
-    propSpan.textContent = px;
+  propSizeSlider.addEventListener('input', e => {
+    s.dotSize = +e.target.value;
+    propSizeSpan.textContent = s.dotSize;
     applyShapePattern();
-  }
-  setDensity(s.density);
-
-  propSlider.addEventListener('input', e => setDensity(+e.target.value));
+  });
+  propGapSlider.addEventListener('input', e => {
+    s.spacing = +e.target.value;
+    propGapSpan.textContent = s.spacing;
+    applyShapePattern();
+  });
+  applyShapePattern();
 
   // ── Transform ──
   // Transform screen coords to wheel-local (unrotated) coords
@@ -308,6 +385,10 @@ function createShape(type) {
   }
   applyTransform();
 
+  // Expose on s for keyboard handler
+  s.applyTransform = applyTransform;
+  s.deleteShape    = deleteShape;
+
   // ── Hover: fade outline + handle ──
   wheel.addEventListener('pointerenter', () => wheel.classList.add('hovered'));
   wheel.addEventListener('pointerleave', () => wheel.classList.remove('hovered'));
@@ -331,6 +412,7 @@ function createShape(type) {
 
   // ── Shape: drag or resize ──
   shapeEl.addEventListener('pointerdown', e => {
+    selectShape(s);
     if (type === 'square') {
       const { lx, ly } = toLocal(e.clientX, e.clientY);
       const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 16;
@@ -360,6 +442,7 @@ function createShape(type) {
 
   // ── Handle: rotate ──
   handle.addEventListener('pointerdown', e => {
+    selectShape(s);
     s.mode = 'rotate';
     handle.setPointerCapture(e.pointerId);
     e.stopPropagation();
@@ -418,19 +501,18 @@ document.querySelectorAll('.shape-btn').forEach(btn => {
 
 // ── Export helpers ──
 
-function drawHalftonePattern(ctx, pattern, density, x, y, w, h) {
+function drawHalftonePattern(ctx, pattern, dotSize, spacing, ink, x, y, w, h) {
   const tile = document.createElement('canvas');
-  tile.width  = density;
-  tile.height = density;
+  tile.width  = spacing;
+  tile.height = spacing;
   const tc = tile.getContext('2d');
-  tc.fillStyle = '#000';
+  tc.fillStyle = ink;
   if (pattern === 'dots') {
     tc.beginPath();
-    tc.arc(density / 2, density / 2, density * 0.2, 0, Math.PI * 2);
+    tc.arc(spacing / 2, spacing / 2, dotSize / 2, 0, Math.PI * 2);
     tc.fill();
   } else {
-    const lw = Math.max(1, Math.round(density * 0.4));
-    tc.fillRect(0, 0, density, lw);
+    tc.fillRect(0, 0, spacing, dotSize);
   }
   const pat = ctx.createPattern(tile, 'repeat');
   ctx.fillStyle = pat;
@@ -448,8 +530,9 @@ function renderToCanvas(canvas) {
   ctx.fillRect(0, 0, W, H);
 
   if (fieldPattern !== 'blank') {
-    const fpx = +fieldSlider.value;
-    drawHalftonePattern(ctx, fieldPattern, fpx, 0, 0, W, H);
+    const fSize = +fieldSizeSlider.value;
+    const fGap  = +fieldGapSlider.value;
+    drawHalftonePattern(ctx, fieldPattern, fSize, fGap, '#000', 0, 0, W, H);
   }
 
   for (const s of shapes) {
@@ -471,10 +554,11 @@ function renderToCanvas(canvas) {
     }
     ctx.clip();
 
-    // white fill covers field pattern beneath, then shape pattern draws on top
-    ctx.fillStyle = '#fff';
+    const ink = s.inverted ? '#fff' : '#000';
+    const bg  = !s.solidBg ? '#fff' : (s.inverted ? '#000' : '#fff');
+    ctx.fillStyle = bg;
     ctx.fillRect(-s.width / 2, -s.height / 2, s.width, s.height);
-    drawHalftonePattern(ctx, s.pattern, s.density, -s.width / 2, -s.height / 2, s.width, s.height);
+    drawHalftonePattern(ctx, s.pattern, s.dotSize, s.spacing, ink, -s.width / 2, -s.height / 2, s.width, s.height);
 
     ctx.restore();
   }
@@ -505,41 +589,47 @@ document.getElementById('saveSvg').addEventListener('click', () => {
   const W = window.innerWidth;
   const H = window.innerHeight;
 
-  function patDef(id, pattern, density, tx, ty) {
-    const r  = (density * 0.2).toFixed(2);
-    const lw = Math.max(1, Math.round(density * 0.4));
+  function patDef(id, pattern, dotSize, spacing, ink, tx, ty) {
+    const r     = (dotSize / 2).toFixed(2);
     const inner = pattern === 'dots'
-      ? `<circle cx="${density / 2}" cy="${density / 2}" r="${r}" fill="#000"/>`
-      : `<rect x="0" y="0" width="${density}" height="${lw}" fill="#000"/>`;
+      ? `<circle cx="${spacing / 2}" cy="${spacing / 2}" r="${r}" fill="${ink}"/>`
+      : `<rect x="0" y="0" width="${spacing}" height="${dotSize}" fill="${ink}"/>`;
     const xform = (tx || ty) ? ` patternTransform="translate(${tx},${ty})"` : '';
-    return `<pattern id="${id}" width="${density}" height="${density}" patternUnits="userSpaceOnUse"${xform}>${inner}</pattern>`;
+    return `<pattern id="${id}" width="${spacing}" height="${spacing}" patternUnits="userSpaceOnUse"${xform}>${inner}</pattern>`;
   }
 
   let defs = '<defs>';
   let body = '';
 
   if (fieldPattern !== 'blank') {
-    const fpx = +fieldSlider.value;
-    defs += patDef('fp', fieldPattern, fpx, 0, 0);
+    const fSize = +fieldSizeSlider.value;
+    const fGap  = +fieldGapSlider.value;
+    defs += patDef('fp', fieldPattern, fSize, fGap, '#000', 0, 0);
     body += `<rect width="${W}" height="${H}" fill="url(#fp)"/>`;
   }
 
   shapes.forEach((s, i) => {
     if (!s.visible) return;
-    defs += patDef(`sp${i}`, s.pattern, s.density, 0, 0);
+    const ink = s.inverted ? '#fff' : '#000';
+    defs += patDef(`sp${i}`, s.pattern, s.dotSize, s.spacing, ink, 0, 0);
 
-    const t = `translate(${s.cx.toFixed(1)},${s.cy.toFixed(1)}) rotate(${s.ang.toFixed(2)})`;
-    let el = '';
+    const t  = `translate(${s.cx.toFixed(1)},${s.cy.toFixed(1)}) rotate(${s.ang.toFixed(2)})`;
+    const bg = s.solidBg ? (s.inverted ? '#000' : '#fff') : 'none';
+    const hw = (s.width  / 2).toFixed(1);
+    const hh = (s.height / 2).toFixed(1);
+    let bgEl = '', el = '';
     if (s.type === 'circle') {
-      el = `<circle cx="0" cy="0" r="${(s.width / 2).toFixed(1)}" fill="url(#sp${i})"/>`;
+      if (bg !== 'none') bgEl = `<circle cx="0" cy="0" r="${hw}" fill="${bg}"/>`;
+      el = `<circle cx="0" cy="0" r="${hw}" fill="url(#sp${i})"/>`;
     } else if (s.type === 'square') {
-      const hw = (s.width / 2).toFixed(1), hh = (s.height / 2).toFixed(1);
+      if (bg !== 'none') bgEl = `<rect x="-${hw}" y="-${hh}" width="${s.width.toFixed(1)}" height="${s.height.toFixed(1)}" fill="${bg}"/>`;
       el = `<rect x="-${hw}" y="-${hh}" width="${s.width.toFixed(1)}" height="${s.height.toFixed(1)}" fill="url(#sp${i})"/>`;
     } else {
-      const hw = (s.width / 2).toFixed(1), hh = (s.height / 2).toFixed(1);
-      el = `<polygon points="0,-${hh} -${hw},${hh} ${hw},${hh}" fill="url(#sp${i})"/>`;
+      const pts = `0,-${hh} -${hw},${hh} ${hw},${hh}`;
+      if (bg !== 'none') bgEl = `<polygon points="${pts}" fill="${bg}"/>`;
+      el = `<polygon points="${pts}" fill="url(#sp${i})"/>`;
     }
-    body += `<g transform="${t}">${el}</g>`;
+    body += `<g transform="${t}">${bgEl}${el}</g>`;
   });
 
   defs += '</defs>';
@@ -551,6 +641,31 @@ document.getElementById('saveSvg').addEventListener('click', () => {
   a.download = 'halftone.svg';
   a.click();
   URL.revokeObjectURL(a.href);
+});
+
+// ── Deselect on canvas click ──
+document.addEventListener('pointerdown', e => {
+  if (!e.target.closest('.wheel') && !e.target.closest('.prop-box') && !e.target.closest('.panel')) {
+    selectShape(null);
+  }
+});
+
+// ── Keyboard shortcuts ──
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (!selected) return;
+
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    selected.deleteShape();
+    e.preventDefault();
+    return;
+  }
+
+  const step = e.shiftKey ? 10 : 1;
+  if (e.key === 'ArrowLeft')  { selected.cx -= step; selected.applyTransform(); e.preventDefault(); }
+  if (e.key === 'ArrowRight') { selected.cx += step; selected.applyTransform(); e.preventDefault(); }
+  if (e.key === 'ArrowUp')    { selected.cy -= step; selected.applyTransform(); e.preventDefault(); }
+  if (e.key === 'ArrowDown')  { selected.cy += step; selected.applyTransform(); e.preventDefault(); }
 });
 
 // ── Info modal ──
