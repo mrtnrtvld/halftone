@@ -77,12 +77,14 @@ function createShape(type) {
   const s = {
     cx:      window.innerWidth  / 2 + n * 30,
     cy:      window.innerHeight / 2 + n * 20,
-    ang:     0,
-    size:    220,
-    density: 8,
-    mode:    null,
-    dragOx:  0,
-    dragOy:  0,
+    ang:        0,
+    width:      220,
+    height:     220,
+    resizeEdge: '',
+    density:    8,
+    mode:       null,
+    dragOx:     0,
+    dragOy:     0,
     type,
     pattern: 'dots',
     visible: true,
@@ -275,9 +277,20 @@ function createShape(type) {
   propSlider.addEventListener('input', e => setDensity(+e.target.value));
 
   // ── Transform ──
+  // Transform screen coords to wheel-local (unrotated) coords
+  function toLocal(ex, ey) {
+    const dx  = ex - s.cx;
+    const dy  = ey - s.cy;
+    const rad = s.ang * Math.PI / 180;
+    return {
+      lx:  dx * Math.cos(rad) + dy * Math.sin(rad),
+      ly: -dx * Math.sin(rad) + dy * Math.cos(rad),
+    };
+  }
+
   function updatePropBoxPosition() {
     const rad  = s.ang * Math.PI / 180;
-    const dist = s.size / 2 - 10;  // knob centre is 10px from wheel top
+    const dist = (type === 'square' ? s.height : (s.width || s.height)) / 2 - 10;
     const kx   = s.cx + dist * Math.sin(rad);
     const ky   = s.cy - dist * Math.cos(rad);
     propBox.style.left = (kx + 14) + 'px';
@@ -285,10 +298,10 @@ function createShape(type) {
   }
 
   function applyTransform() {
-    wheel.style.width     = s.size + 'px';
-    wheel.style.height    = s.size + 'px';
-    wheel.style.left      = s.cx   + 'px';
-    wheel.style.top       = s.cy   + 'px';
+    wheel.style.width     = s.width  + 'px';
+    wheel.style.height    = s.height + 'px';
+    wheel.style.left      = s.cx     + 'px';
+    wheel.style.top       = s.cy     + 'px';
     wheel.style.transform = `translate(-50%, -50%) rotate(${s.ang}deg)`;
     updatePropBoxPosition();
   }
@@ -301,19 +314,43 @@ function createShape(type) {
   // ── Cursor hint: edge = resize ──
   shapeEl.addEventListener('pointermove', e => {
     if (s.mode) return;
-    const dist = Math.hypot(e.clientX - s.cx, e.clientY - s.cy);
-    shapeEl.style.cursor = dist > s.size / 2 - 16 ? 'ew-resize' : 'grab';
+    if (type === 'square') {
+      const { lx, ly } = toLocal(e.clientX, e.clientY);
+      const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 16;
+      const nearV = Math.abs(Math.abs(ly) - s.height / 2) < 16;
+      if (nearH && !nearV) shapeEl.style.cursor = 'ew-resize';
+      else if (nearV && !nearH) shapeEl.style.cursor = 'ns-resize';
+      else if (nearH && nearV) shapeEl.style.cursor = 'ew-resize';
+      else shapeEl.style.cursor = 'grab';
+    } else {
+      const dist = Math.hypot(e.clientX - s.cx, e.clientY - s.cy);
+      shapeEl.style.cursor = dist > s.width / 2 - 16 ? 'ew-resize' : 'grab';
+    }
   });
 
   // ── Shape: drag or resize ──
   shapeEl.addEventListener('pointerdown', e => {
-    const dist = Math.hypot(e.clientX - s.cx, e.clientY - s.cy);
-    if (dist > s.size / 2 - 16) {
-      s.mode = 'resize';
+    if (type === 'square') {
+      const { lx, ly } = toLocal(e.clientX, e.clientY);
+      const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 16;
+      const nearV = Math.abs(Math.abs(ly) - s.height / 2) < 16;
+      if (nearH || nearV) {
+        s.mode = 'resize';
+        s.resizeEdge = nearV && !nearH ? 'v' : 'h';
+      } else {
+        s.mode   = 'drag';
+        s.dragOx = e.clientX - s.cx;
+        s.dragOy = e.clientY - s.cy;
+      }
     } else {
-      s.mode   = 'drag';
-      s.dragOx = e.clientX - s.cx;
-      s.dragOy = e.clientY - s.cy;
+      const dist = Math.hypot(e.clientX - s.cx, e.clientY - s.cy);
+      if (dist > s.width / 2 - 16) {
+        s.mode = 'resize';
+      } else {
+        s.mode   = 'drag';
+        s.dragOx = e.clientX - s.cx;
+        s.dragOy = e.clientY - s.cy;
+      }
     }
     shapeEl.setPointerCapture(e.pointerId);
     e.stopPropagation();
@@ -347,9 +384,20 @@ function createShape(type) {
       s.ang = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
       applyTransform();
     } else if (s.mode === 'resize') {
-      const dx = e.clientX - s.cx;
-      const dy = e.clientY - s.cy;
-      s.size = Math.max(60, Math.hypot(dx, dy) * 2);
+      if (type === 'square') {
+        const { lx, ly } = toLocal(e.clientX, e.clientY);
+        if (s.resizeEdge === 'h') {
+          s.width  = Math.max(40, Math.abs(lx) * 2);
+        } else {
+          s.height = Math.max(40, Math.abs(ly) * 2);
+        }
+      } else {
+        const dx = e.clientX - s.cx;
+        const dy = e.clientY - s.cy;
+        const r  = Math.max(30, Math.hypot(dx, dy));
+        s.width  = r * 2;
+        s.height = r * 2;
+      }
       applyTransform();
     }
   });
