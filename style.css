@@ -60,6 +60,14 @@ body {
   filter: drop-shadow(0 0 5px rgba(0,0,0,0.85));
 }
 
+/* ── PATH SHAPE ── */
+.shape.path {
+  filter: drop-shadow(0 0 5px rgba(0,0,0,0));
+  transition: filter 0.2s ease;
+}
+.wheel.hovered  .shape.path { filter: drop-shadow(0 0 5px rgba(0,0,0,0.85)); }
+.wheel.selected .shape.path { filter: drop-shadow(0 0 5px rgba(0,0,0,0.85)); }
+
 /* ── SELECTED ── */
 .wheel.selected .shape.circle,
 .wheel.selected .shape.square {
@@ -262,7 +270,20 @@ input[type=range]::-moz-range-thumb {
 }
 .add-icon.circle   { border-radius: 50%; }
 .add-icon.triangle { clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+.add-icon.path {
+  background: none;
+  border-top:   2.5px solid #000;
+  border-right: 2.5px solid #000;
+  border-radius: 0 70% 0 0;
+  width: 12px;
+  height: 12px;
+  margin: 2px;
+}
 .shape-btn:hover .add-icon { background: #fff; }
+.shape-btn:hover .add-icon.path { background: none; border-color: #fff; }
+.shape-btn.active { background: #000; }
+.shape-btn.active .add-icon { background: #fff; }
+.shape-btn.active .add-icon.path { background: none; border-color: #fff; }
 
 /* ── LAYERS LIST ── */
 .layers-list {

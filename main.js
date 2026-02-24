@@ -61,7 +61,10 @@ let draggedShape = null;
 let selected     = null;
 
 function selectShape(sh) {
-  if (selected) selected.wheel.classList.remove('selected');
+  if (selected) {
+    if (selected.exitEditMode) selected.exitEditMode();
+    selected.wheel.classList.remove('selected');
+  }
   selected = sh;
   if (selected) selected.wheel.classList.add('selected');
 }
@@ -86,11 +89,11 @@ function syncShapesFromDOM() {
 }
 
 // ── Shape factory ──
-function createShape(type) {
+function createShape(type, initState = {}) {
   const n = shapes.length;   // capture before push
   const s = {
-    cx:      window.innerWidth  / 2 + n * 30,
-    cy:      window.innerHeight / 2 + n * 20,
+    cx:      initState.cx ?? (window.innerWidth  / 2 + n * 30),
+    cy:      initState.cy ?? (window.innerHeight / 2 + n * 20),
     ang:        0,
     width:      220,
     height:     220,
@@ -105,9 +108,12 @@ function createShape(type) {
     solidBg:  false,
     inverted: false,
     visible: true,
-    wheel:   null,   // assigned below
-    propBox: null,   // assigned below
-    listEl:  null,   // assigned below
+    points:   initState.points ?? [],   // path-specific
+    editMode: false,
+    editSvg:  null,
+    wheel:   null,
+    propBox: null,
+    listEl:  null,
   };
 
   // ── Wheel ──
@@ -262,8 +268,121 @@ function createShape(type) {
     visBtn.textContent = s.visible ? '●' : '○';
   });
 
+  // ── Edit mode (path only) ──
+  function enterEditMode() {
+    s.editMode = true;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:5';
+    wheel.append(svg);
+    s.editSvg = svg;
+    renderEditHandles();
+  }
+
+  function exitEditMode() {
+    s.editMode = false;
+    if (s.editSvg) { s.editSvg.remove(); s.editSvg = null; }
+  }
+  s.exitEditMode = exitEditMode;
+
+  function renderEditHandles() {
+    const svg = s.editSvg;
+    if (!svg) return;
+    svg.innerHTML = '';
+    const ox = s.width / 2, oy = s.height / 2;
+
+    // Lines (drawn behind handles)
+    for (const pt of s.points) {
+      if (Math.hypot(pt.cp1x - pt.x, pt.cp1y - pt.y) > 2)
+        svgLine(svg, pt.x+ox, pt.y+oy, pt.cp1x+ox, pt.cp1y+oy);
+      if (Math.hypot(pt.cp2x - pt.x, pt.cp2y - pt.y) > 2)
+        svgLine(svg, pt.x+ox, pt.y+oy, pt.cp2x+ox, pt.cp2y+oy);
+    }
+
+    // Handle circles and anchor squares
+    s.points.forEach((pt, idx) => {
+      if (Math.hypot(pt.cp1x - pt.x, pt.cp1y - pt.y) > 2) {
+        const c = svgEditHandle(pt.cp1x+ox, pt.cp1y+oy, 'circle');
+        c.addEventListener('pointerdown', e => startEditDrag(e, idx, 'cp1'));
+        svg.append(c);
+      }
+      if (Math.hypot(pt.cp2x - pt.x, pt.cp2y - pt.y) > 2) {
+        const c = svgEditHandle(pt.cp2x+ox, pt.cp2y+oy, 'circle');
+        c.addEventListener('pointerdown', e => startEditDrag(e, idx, 'cp2'));
+        svg.append(c);
+      }
+      const sq = svgEditHandle(pt.x+ox, pt.y+oy, 'square');
+      sq.addEventListener('pointerdown', e => startEditDrag(e, idx, 'anchor'));
+      svg.append(sq);
+    });
+  }
+
+  function svgLine(svg, x1, y1, x2, y2) {
+    const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.setAttribute('x1', x1.toFixed(1)); l.setAttribute('y1', y1.toFixed(1));
+    l.setAttribute('x2', x2.toFixed(1)); l.setAttribute('y2', y2.toFixed(1));
+    l.setAttribute('stroke', '#888'); l.setAttribute('stroke-width', '1');
+    svg.append(l);
+  }
+
+  function svgEditHandle(x, y, shape) {
+    let el;
+    if (shape === 'circle') {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      el.setAttribute('cx', x.toFixed(1)); el.setAttribute('cy', y.toFixed(1));
+      el.setAttribute('r', '4');
+    } else {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      el.setAttribute('x', (x-4).toFixed(1)); el.setAttribute('y', (y-4).toFixed(1));
+      el.setAttribute('width', '8'); el.setAttribute('height', '8');
+    }
+    el.setAttribute('fill', '#fff'); el.setAttribute('stroke', '#000');
+    el.setAttribute('stroke-width', '1.5');
+    el.style.cursor = 'move';
+    el.style.pointerEvents = 'all';
+    return el;
+  }
+
+  function startEditDrag(e, ptIdx, which) {
+    e.stopPropagation(); e.preventDefault();
+    const svg = s.editSvg;
+    svg.setPointerCapture(e.pointerId);
+    const pt    = s.points[ptIdx];
+    const sx    = e.clientX, sy = e.clientY;
+    const rad   = s.ang * Math.PI / 180;
+    const orig  = { x: pt.x, y: pt.y, cp1x: pt.cp1x, cp1y: pt.cp1y, cp2x: pt.cp2x, cp2y: pt.cp2y };
+    const c1ox  = pt.cp1x - pt.x, c1oy = pt.cp1y - pt.y;
+    const c2ox  = pt.cp2x - pt.x, c2oy = pt.cp2y - pt.y;
+
+    function onMove(me) {
+      const dxS = me.clientX - sx, dyS = me.clientY - sy;
+      // Rotate screen delta into wheel-local space
+      const dlx =  dxS * Math.cos(rad) + dyS * Math.sin(rad);
+      const dly = -dxS * Math.sin(rad) + dyS * Math.cos(rad);
+      if (which === 'anchor') {
+        pt.x = orig.x + dlx; pt.y = orig.y + dly;
+        pt.cp1x = pt.x + c1ox; pt.cp1y = pt.y + c1oy;
+        pt.cp2x = pt.x + c2ox; pt.cp2y = pt.y + c2oy;
+      } else if (which === 'cp1') {
+        pt.cp1x = orig.cp1x + dlx; pt.cp1y = orig.cp1y + dly;
+        if (pt.smooth) { pt.cp2x = 2*pt.x - pt.cp1x; pt.cp2y = 2*pt.y - pt.cp1y; }
+      } else {
+        pt.cp2x = orig.cp2x + dlx; pt.cp2y = orig.cp2y + dly;
+        if (pt.smooth) { pt.cp1x = 2*pt.x - pt.cp2x; pt.cp1y = 2*pt.y - pt.cp2y; }
+      }
+      applyTransform();
+      renderEditHandles();
+    }
+    function onUp() {
+      svg.removeEventListener('pointermove', onMove);
+      svg.removeEventListener('pointerup', onUp);
+    }
+    svg.addEventListener('pointermove', onMove);
+    svg.addEventListener('pointerup', onUp);
+  }
+
   function deleteShape() {
     if (selected === s) selectShape(null);
+    exitEditMode();
     wheel.remove();
     propBox.remove();
     s.listEl.remove();
@@ -366,9 +485,50 @@ function createShape(type) {
     };
   }
 
+  // ── Path helpers ──
+  function getPathBBox(pts) {
+    if (!pts.length) return { minX: -110, minY: -110, maxX: 110, maxY: 110 };
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of pts) {
+      minX = Math.min(minX, p.x, p.cp1x, p.cp2x);
+      minY = Math.min(minY, p.y, p.cp1y, p.cp2y);
+      maxX = Math.max(maxX, p.x, p.cp1x, p.cp2x);
+      maxY = Math.max(maxY, p.y, p.cp1y, p.cp2y);
+    }
+    return { minX, minY, maxX, maxY };
+  }
+
+  function buildPathD(pts, ox, oy) {
+    let d = `M ${(pts[0].x + ox).toFixed(1)} ${(pts[0].y + oy).toFixed(1)}`;
+    for (let i = 0; i < pts.length; i++) {
+      const c = pts[i], nx = pts[(i + 1) % pts.length];
+      d += ` C ${(c.cp2x+ox).toFixed(1)} ${(c.cp2y+oy).toFixed(1)} ${(nx.cp1x+ox).toFixed(1)} ${(nx.cp1y+oy).toFixed(1)} ${(nx.x+ox).toFixed(1)} ${(nx.y+oy).toFixed(1)}`;
+    }
+    return d + ' Z';
+  }
+
+  function applyClipPath() {
+    if (s.points.length < 3) { shapeEl.style.clipPath = 'none'; return; }
+    shapeEl.style.clipPath = `path("${buildPathD(s.points, s.width/2, s.height/2)}")`;
+  }
+
+  function isInsidePath(lx, ly) {
+    if (s.points.length < 3) return false;
+    const tc = document.createElement('canvas').getContext('2d');
+    const pts = s.points;
+    tc.beginPath();
+    tc.moveTo(pts[0].x, pts[0].y);
+    for (let i = 0; i < pts.length; i++) {
+      const c = pts[i], nx = pts[(i + 1) % pts.length];
+      tc.bezierCurveTo(c.cp2x, c.cp2y, nx.cp1x, nx.cp1y, nx.x, nx.y);
+    }
+    tc.closePath();
+    return tc.isPointInPath(lx, ly);
+  }
+
   function updatePropBoxPosition() {
     const rad  = s.ang * Math.PI / 180;
-    const dist = (type === 'square' ? s.height : (s.width || s.height)) / 2 - 10;
+    const dist = s.height / 2 - 10;
     const kx   = s.cx + dist * Math.sin(rad);
     const ky   = s.cy - dist * Math.cos(rad);
     propBox.style.left = (kx + 14) + 'px';
@@ -376,6 +536,13 @@ function createShape(type) {
   }
 
   function applyTransform() {
+    if (type === 'path' && s.points.length) {
+      const bb  = getPathBBox(s.points);
+      const pad = 50;
+      s.width  = Math.max(80, bb.maxX - bb.minX + pad * 2);
+      s.height = Math.max(80, bb.maxY - bb.minY + pad * 2);
+      applyClipPath();
+    }
     wheel.style.width     = s.width  + 'px';
     wheel.style.height    = s.height + 'px';
     wheel.style.left      = s.cx     + 'px';
@@ -396,6 +563,11 @@ function createShape(type) {
   // ── Cursor hint: edge = resize ──
   shapeEl.addEventListener('pointermove', e => {
     if (s.mode) return;
+    if (type === 'path') {
+      const { lx, ly } = toLocal(e.clientX, e.clientY);
+      shapeEl.style.cursor = isInsidePath(lx, ly) ? 'grab' : 'default';
+      return;
+    }
     if (type === 'square') {
       const { lx, ly } = toLocal(e.clientX, e.clientY);
       const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 16;
@@ -412,7 +584,21 @@ function createShape(type) {
 
   // ── Shape: drag or resize ──
   shapeEl.addEventListener('pointerdown', e => {
+    if (s.editMode) return;   // edit handles take over in edit mode
+    if (type === 'path') {
+      const { lx, ly } = toLocal(e.clientX, e.clientY);
+      if (!isInsidePath(lx, ly)) { selectShape(null); return; }
+    }
     selectShape(s);
+    if (type === 'path') {
+      s.mode   = 'drag';
+      s.dragOx = e.clientX - s.cx;
+      s.dragOy = e.clientY - s.cy;
+      shapeEl.setPointerCapture(e.pointerId);
+      e.stopPropagation();
+      e.preventDefault();
+      return;
+    }
     if (type === 'square') {
       const { lx, ly } = toLocal(e.clientX, e.clientY);
       const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 16;
@@ -439,6 +625,14 @@ function createShape(type) {
     e.stopPropagation();
     e.preventDefault();
   });
+
+  // ── Path: double-click toggles edit mode ──
+  if (type === 'path') {
+    shapeEl.addEventListener('dblclick', e => {
+      if (s.editMode) exitEditMode(); else enterEditMode();
+      e.stopPropagation();
+    });
+  }
 
   // ── Handle: rotate ──
   handle.addEventListener('pointerdown', e => {
@@ -496,8 +690,170 @@ function createShape(type) {
 
 // ── Shape buttons ──
 document.querySelectorAll('.shape-btn').forEach(btn => {
-  btn.addEventListener('click', () => createShape(btn.dataset.shape));
+  btn.addEventListener('click', () => {
+    if (btn.dataset.shape === 'path') startPathBuild();
+    else createShape(btn.dataset.shape);
+  });
 });
+
+// ── Path building ──
+let pathBuilder = null;
+
+function startPathBuild() {
+  if (pathBuilder) return;
+  const pathBtn = document.getElementById('pathBtn');
+  if (pathBtn) pathBtn.classList.add('active');
+
+  const previewSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  previewSvg.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:50;width:100%;height:100%';
+  document.body.append(previewSvg);
+
+  pathBuilder = { pts: [], draggingPt: null, mouseX: 0, mouseY: 0, previewSvg };
+  document.body.style.cursor = 'crosshair';
+
+  document.addEventListener('pointerdown', onBuildDown,    true);
+  document.addEventListener('pointermove', onBuildMove,    true);
+  document.addEventListener('pointerup',   onBuildUp,      true);
+  document.addEventListener('dblclick',    onBuildDblClick,true);
+  document.addEventListener('keydown',     onBuildKey,     true);
+}
+
+function onBuildDown(e) {
+  if (!pathBuilder) return;
+  if (e.target.closest('.panel') || e.target.closest('.prop-box') || e.target.closest('.info-modal')) return;
+  if (e.detail >= 2) return;   // second click of dblclick handled separately
+  e.stopPropagation(); e.preventDefault();
+
+  const { pts } = pathBuilder;
+  // Click on first point closes path
+  if (pts.length >= 3 && Math.hypot(e.clientX - pts[0].x, e.clientY - pts[0].y) < 12) {
+    finishPath(); return;
+  }
+  const pt = { x: e.clientX, y: e.clientY,
+               cp1x: e.clientX, cp1y: e.clientY,
+               cp2x: e.clientX, cp2y: e.clientY, smooth: false };
+  pts.push(pt);
+  pathBuilder.draggingPt = pt;
+  updateBuildPreview();
+}
+
+function onBuildMove(e) {
+  if (!pathBuilder) return;
+  pathBuilder.mouseX = e.clientX;
+  pathBuilder.mouseY = e.clientY;
+  const pt = pathBuilder.draggingPt;
+  if (pt && Math.hypot(e.clientX - pt.x, e.clientY - pt.y) > 4) {
+    pt.cp2x = e.clientX; pt.cp2y = e.clientY;
+    pt.cp1x = 2*pt.x - pt.cp2x; pt.cp1y = 2*pt.y - pt.cp2y;
+    pt.smooth = true;
+  }
+  updateBuildPreview();
+}
+
+function onBuildUp(e) {
+  if (!pathBuilder) return;
+  pathBuilder.draggingPt = null;
+}
+
+function onBuildDblClick(e) {
+  if (!pathBuilder) return;
+  if (e.target.closest('.panel') || e.target.closest('.prop-box')) return;
+  e.stopPropagation(); e.preventDefault();
+  if (pathBuilder.pts.length >= 3) finishPath(); else cleanupBuild();
+}
+
+function onBuildKey(e) {
+  if (!pathBuilder) return;
+  if (e.key === 'Enter' && pathBuilder.pts.length >= 3) {
+    e.stopPropagation(); e.preventDefault(); finishPath();
+  } else if (e.key === 'Escape') {
+    e.stopPropagation(); e.preventDefault(); cleanupBuild();
+  }
+}
+
+function updateBuildPreview() {
+  const { previewSvg, pts, mouseX: mx, mouseY: my, draggingPt } = pathBuilder;
+  previewSvg.innerHTML = '';
+  if (!pts.length) return;
+
+  let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+  for (let i = 1; i < pts.length; i++) {
+    const pv = pts[i-1], cu = pts[i];
+    d += ` C ${pv.cp2x.toFixed(1)} ${pv.cp2y.toFixed(1)} ${cu.cp1x.toFixed(1)} ${cu.cp1y.toFixed(1)} ${cu.x.toFixed(1)} ${cu.y.toFixed(1)}`;
+  }
+  if (!draggingPt) {
+    const last = pts[pts.length-1];
+    d += ` C ${last.cp2x.toFixed(1)} ${last.cp2y.toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}`;
+  }
+
+  const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  pathEl.setAttribute('d', d); pathEl.setAttribute('fill', 'none');
+  pathEl.setAttribute('stroke', '#000'); pathEl.setAttribute('stroke-width', '1.5');
+  pathEl.setAttribute('stroke-dasharray', '5 3');
+  previewSvg.append(pathEl);
+
+  pts.forEach((pt, i) => {
+    if (pt.smooth) {
+      buildPreviewLine(previewSvg, pt.x, pt.y, pt.cp1x, pt.cp1y);
+      buildPreviewLine(previewSvg, pt.x, pt.y, pt.cp2x, pt.cp2y);
+      buildPreviewDot(previewSvg, pt.cp1x, pt.cp1y);
+      buildPreviewDot(previewSvg, pt.cp2x, pt.cp2y);
+    }
+    const isFirst = i === 0 && pts.length >= 3;
+    const sq = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    const hs = isFirst ? 6 : 4;
+    sq.setAttribute('x', pt.x - hs); sq.setAttribute('y', pt.y - hs);
+    sq.setAttribute('width', hs*2); sq.setAttribute('height', hs*2);
+    sq.setAttribute('fill', '#fff'); sq.setAttribute('stroke', '#000');
+    sq.setAttribute('stroke-width', isFirst ? '2' : '1.5');
+    previewSvg.append(sq);
+  });
+}
+
+function buildPreviewLine(svg, x1, y1, x2, y2) {
+  const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  l.setAttribute('x1', x1.toFixed(1)); l.setAttribute('y1', y1.toFixed(1));
+  l.setAttribute('x2', x2.toFixed(1)); l.setAttribute('y2', y2.toFixed(1));
+  l.setAttribute('stroke', '#888'); l.setAttribute('stroke-width', '1');
+  svg.append(l);
+}
+
+function buildPreviewDot(svg, cx, cy) {
+  const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  c.setAttribute('cx', cx.toFixed(1)); c.setAttribute('cy', cy.toFixed(1));
+  c.setAttribute('r', '3.5'); c.setAttribute('fill', '#fff');
+  c.setAttribute('stroke', '#000'); c.setAttribute('stroke-width', '1.5');
+  svg.append(c);
+}
+
+function finishPath() {
+  const { pts } = pathBuilder;
+  if (pts.length < 3) { cleanupBuild(); return; }
+  cleanupBuild();
+  const cx = pts.reduce((a, p) => a + p.x, 0) / pts.length;
+  const cy = pts.reduce((a, p) => a + p.y, 0) / pts.length;
+  const localPts = pts.map(p => ({
+    x: p.x - cx, y: p.y - cy,
+    cp1x: p.cp1x - cx, cp1y: p.cp1y - cy,
+    cp2x: p.cp2x - cx, cp2y: p.cp2y - cy,
+    smooth: p.smooth,
+  }));
+  createShape('path', { cx, cy, points: localPts });
+}
+
+function cleanupBuild() {
+  if (!pathBuilder) return;
+  pathBuilder.previewSvg.remove();
+  document.removeEventListener('pointerdown', onBuildDown,    true);
+  document.removeEventListener('pointermove', onBuildMove,    true);
+  document.removeEventListener('pointerup',   onBuildUp,      true);
+  document.removeEventListener('dblclick',    onBuildDblClick,true);
+  document.removeEventListener('keydown',     onBuildKey,     true);
+  document.body.style.cursor = '';
+  const pathBtn = document.getElementById('pathBtn');
+  if (pathBtn) pathBtn.classList.remove('active');
+  pathBuilder = null;
+}
 
 // ── Export helpers ──
 
@@ -546,6 +902,15 @@ function renderToCanvas(canvas) {
       ctx.arc(0, 0, s.width / 2, 0, Math.PI * 2);
     } else if (s.type === 'square') {
       ctx.rect(-s.width / 2, -s.height / 2, s.width, s.height);
+    } else if (s.type === 'path') {
+      if (s.points.length < 3) { ctx.restore(); continue; }
+      const pathPts = s.points;
+      ctx.moveTo(pathPts[0].x, pathPts[0].y);
+      for (let pi = 0; pi < pathPts.length; pi++) {
+        const c = pathPts[pi], nx = pathPts[(pi + 1) % pathPts.length];
+        ctx.bezierCurveTo(c.cp2x, c.cp2y, nx.cp1x, nx.cp1y, nx.x, nx.y);
+      }
+      ctx.closePath();
     } else {
       ctx.moveTo(0, -s.height / 2);
       ctx.lineTo(-s.width / 2, s.height / 2);
@@ -624,6 +989,17 @@ document.getElementById('saveSvg').addEventListener('click', () => {
     } else if (s.type === 'square') {
       if (bg !== 'none') bgEl = `<rect x="-${hw}" y="-${hh}" width="${s.width.toFixed(1)}" height="${s.height.toFixed(1)}" fill="${bg}"/>`;
       el = `<rect x="-${hw}" y="-${hh}" width="${s.width.toFixed(1)}" height="${s.height.toFixed(1)}" fill="url(#sp${i})"/>`;
+    } else if (s.type === 'path') {
+      if (s.points.length < 3) return;
+      const svgPts = s.points;
+      let d = `M ${svgPts[0].x.toFixed(1)},${svgPts[0].y.toFixed(1)}`;
+      for (let pi = 0; pi < svgPts.length; pi++) {
+        const c = svgPts[pi], nx = svgPts[(pi + 1) % svgPts.length];
+        d += ` C ${c.cp2x.toFixed(1)},${c.cp2y.toFixed(1)} ${nx.cp1x.toFixed(1)},${nx.cp1y.toFixed(1)} ${nx.x.toFixed(1)},${nx.y.toFixed(1)}`;
+      }
+      d += ' Z';
+      if (bg !== 'none') bgEl = `<path d="${d}" fill="${bg}"/>`;
+      el = `<path d="${d}" fill="url(#sp${i})"/>`;
     } else {
       const pts = `0,-${hh} -${hw},${hh} ${hw},${hh}`;
       if (bg !== 'none') bgEl = `<polygon points="${pts}" fill="${bg}"/>`;
@@ -654,6 +1030,12 @@ document.addEventListener('pointerdown', e => {
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
   if (!selected) return;
+
+  if (e.key === 'Escape' && selected.editMode) {
+    selected.exitEditMode();
+    e.preventDefault();
+    return;
+  }
 
   if (e.key === 'Delete' || e.key === 'Backspace') {
     selected.deleteShape();
