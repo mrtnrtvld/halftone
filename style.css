@@ -60,6 +60,26 @@ body {
   filter: drop-shadow(0 0 5px rgba(0,0,0,0.85));
 }
 
+/* ── PATH SHAPE ── */
+.shape.path {
+  filter: drop-shadow(0 0 5px rgba(0,0,0,0));
+  transition: filter 0.2s ease;
+}
+.wheel.hovered  .shape.path { filter: drop-shadow(0 0 5px rgba(0,0,0,0.85)); }
+.wheel.selected .shape.path { filter: drop-shadow(0 0 5px rgba(0,0,0,0.85)); }
+
+/* ── SELECTED ── */
+.wheel.selected .shape.circle,
+.wheel.selected .shape.square {
+  box-shadow: 0 0 0 4px #fff, 0 0 0 7px #000;
+}
+
+.wheel.selected .shape.triangle {
+  filter: drop-shadow(0 0 5px rgba(0,0,0,0.85));
+}
+
+.wheel.selected .handle { opacity: 1; }
+
 /* ── HANDLE ── */
 .handle {
   position: absolute;
@@ -250,7 +270,20 @@ input[type=range]::-moz-range-thumb {
 }
 .add-icon.circle   { border-radius: 50%; }
 .add-icon.triangle { clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+.add-icon.path {
+  background: none;
+  border-top:   2.5px solid #000;
+  border-right: 2.5px solid #000;
+  border-radius: 0 70% 0 0;
+  width: 12px;
+  height: 12px;
+  margin: 2px;
+}
 .shape-btn:hover .add-icon { background: #fff; }
+.shape-btn:hover .add-icon.path { background: none; border-color: #fff; }
+.shape-btn.active { background: #000; }
+.shape-btn.active .add-icon { background: #fff; }
+.shape-btn.active .add-icon.path { background: none; border-color: #fff; }
 
 /* ── LAYERS LIST ── */
 .layers-list {
@@ -367,6 +400,44 @@ input[type=range]::-moz-range-thumb {
   flex-shrink: 0;
 }
 .prop-close:hover { opacity: 0.5; }
+
+/* ── PROP BOX SLIDER ROWS ── */
+.prop-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.prop-slider-row input[type="range"] {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── PROP BOX TOGGLE BUTTONS (BG / invert) ── */
+.prop-toggle-row {
+  display: flex;
+  gap: 4px;
+}
+
+.prop-toggle {
+  flex: 1;
+  height: 26px;
+  background: #fff;
+  border: 2px solid #000;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.prop-toggle.active {
+  background: #000;
+  color: #fff;
+}
+.prop-toggle:hover:not(.active) { opacity: 0.6; }
 
 /* ── BLANK FIELD ICON ── */
 .pattern-icon.blank {

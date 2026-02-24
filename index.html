@@ -15,14 +15,19 @@
     <button class="panel-toggle" id="panelToggle">◀</button>
     <div class="panel-body">
 
+      <div class="panel-label">Field</div>
       <div class="panel-row">
-        <div class="panel-label">Field&nbsp;<span id="fieldVal">8</span>px</div>
-        <input type="range" id="fieldSlider" min="3" max="30" value="8" step="1">
-        <div class="pattern-btns">
-          <button class="pattern-btn active" id="fieldDots"><span class="pattern-icon dots"></span></button>
-          <button class="pattern-btn" id="fieldLines"><span class="pattern-icon lines"></span></button>
-          <button class="pattern-btn" id="fieldBlank"><span class="pattern-icon blank"></span></button>
-        </div>
+        <div class="panel-label">Size&nbsp;<span id="fieldSizeVal">4</span></div>
+        <input type="range" id="fieldSizeSlider" min="1" max="20" value="4" step="1">
+      </div>
+      <div class="panel-row">
+        <div class="panel-label">Gap&nbsp;<span id="fieldGapVal">8</span></div>
+        <input type="range" id="fieldGapSlider" min="2" max="40" value="8" step="1">
+      </div>
+      <div class="pattern-btns">
+        <button class="pattern-btn active" id="fieldDots"><span class="pattern-icon dots"></span></button>
+        <button class="pattern-btn" id="fieldLines"><span class="pattern-icon lines"></span></button>
+        <button class="pattern-btn" id="fieldBlank"><span class="pattern-icon blank"></span></button>
       </div>
 
       <div class="panel-divider"></div>
@@ -37,6 +42,9 @@
         </button>
         <button class="shape-btn" data-shape="triangle" title="Triangle">
           <span class="add-icon triangle"></span>
+        </button>
+        <button class="shape-btn" id="pathBtn" data-shape="path" title="Freeform path">
+          <span class="add-icon path"></span>
         </button>
       </div>
 
@@ -70,7 +78,7 @@
       <p class="info-lead">Compose layered halftone patterns using geometric shapes.</p>
 
       <h3>Field</h3>
-      <p>The background pattern covering the whole canvas. Use the slider to adjust dot or line spacing, and switch between dots, lines, or blank.</p>
+      <p>The background pattern covering the whole canvas. Use <em>Size</em> to control dot diameter or line thickness, and <em>Gap</em> to control spacing between them. Switch between dots, lines, or blank.</p>
 
       <h3>Adding shapes</h3>
       <p>Click the circle, square, or triangle buttons in the panel to add a shape to the canvas.</p>
@@ -85,7 +93,14 @@
       <p>Hover over a shape to reveal the circular handle near its top edge. Drag the handle to rotate the shape freely.</p>
 
       <h3>Density &amp; pattern</h3>
-      <p>Double-click the circular handle to open the property box for that shape. Adjust the slider to change dot or line spacing, and click the pattern buttons to switch between dots and lines.</p>
+      <p>Double-click the circular handle to open the property box for that shape. Use <em>Size</em> to control dot diameter or line thickness, <em>Gap</em> to set spacing, and the pattern buttons to switch between dots and lines. Toggle <strong>■</strong> for a solid background and <strong>◑</strong> to invert colours.</p>
+
+      <h3>Freeform path</h3>
+      <p>Click the pen icon to start drawing. Each click places a corner point; click and drag to create a smooth curve point (handles appear). Click the first point again, or press <strong>Enter</strong>, to close the shape. Press <strong>Escape</strong> to cancel. After closing, double-click the shape to enter edit mode — drag anchor squares to move points, drag handle circles to adjust curves. Press <strong>Escape</strong> to exit edit mode.</p>
+
+      <h3>Keyboard shortcuts</h3>
+      <p><strong>Delete / Backspace</strong> — delete selected shape<br>
+      <strong>Arrow keys</strong> — nudge 1 px; hold Shift for 10 px</p>
 
       <h3>Layers</h3>
       <p>Each shape is listed under Layers. The top entry is the frontmost shape. Drag entries to reorder. Click ● to toggle visibility, × to delete.</p>
