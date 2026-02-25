@@ -53,12 +53,15 @@ panelToggle.addEventListener('click', () => {
 });
 
 // Stop panel interactions reaching the page
-panel.addEventListener('pointerdown', e => e.stopPropagation());
+panel.addEventListener('pointerdown',  e => e.stopPropagation());
+panel.addEventListener('contextmenu',  e => e.stopPropagation());
 
 // ── Shapes & layer ordering ──
 const shapes = [];
 let draggedShape = null;
 let selected     = null;
+
+const ROTATE_CURSOR = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M 12 4 A 8 8 0 1 1 4 12' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cpolygon points='1,10 7,10 4,16' fill='black'/%3E%3C/svg%3E\") 12 12, pointer";
 
 function selectShape(sh) {
   if (selected) {
@@ -100,9 +103,10 @@ function createShape(type, initState = {}) {
     resizeEdge: '',
     dotSize:    4,
     spacing:    8,
-    mode:       null,
-    dragOx:     0,
-    dragOy:     0,
+    mode:         null,
+    dragOx:       0,
+    dragOy:       0,
+    rotateOffset: 0,
     type,
     pattern: 'dots',
     solidBg:  false,
@@ -123,10 +127,7 @@ function createShape(type, initState = {}) {
   const shapeEl = document.createElement('div');
   shapeEl.className = `shape ${type}`;
 
-  const handle  = document.createElement('div');
-  handle.className  = 'handle';
-
-  wheel.append(shapeEl, handle);
+  wheel.append(shapeEl);
   document.body.append(wheel);
   s.wheel = wheel;
 
@@ -270,6 +271,9 @@ function createShape(type, initState = {}) {
 
   // ── Edit mode (path only) ──
   function enterEditMode() {
+    if (type !== 'path') return;
+    if (s.points.length === 0) s.points = initialPoints();
+    applyTransform();
     s.editMode = true;
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:5';
@@ -508,7 +512,12 @@ function createShape(type, initState = {}) {
   }
 
   function applyClipPath() {
-    if (s.points.length < 3) { shapeEl.style.clipPath = 'none'; return; }
+    if (type !== 'path' || s.points.length < 3) {
+      shapeEl.style.clipPath    = '';   // restore CSS class value
+      shapeEl.style.borderRadius = '';  // restore CSS class value
+      return;
+    }
+    shapeEl.style.borderRadius = '0';  // override circle's border-radius: 50%
     shapeEl.style.clipPath = `path("${buildPathD(s.points, s.width/2, s.height/2)}")`;
   }
 
@@ -526,17 +535,36 @@ function createShape(type, initState = {}) {
     return tc.isPointInPath(lx, ly);
   }
 
-  function updatePropBoxPosition() {
-    const rad  = s.ang * Math.PI / 180;
-    const dist = s.height / 2 - 10;
-    const kx   = s.cx + dist * Math.sin(rad);
-    const ky   = s.cy - dist * Math.cos(rad);
-    propBox.style.left = (kx + 14) + 'px';
-    propBox.style.top  = (ky - 10) + 'px';
+  function initialPoints() {
+    const k = 0.5522847498;
+    if (type === 'circle') {
+      const r = s.width / 2;
+      return [
+        { x:  0, y: -r, cp1x: -r*k, cp1y: -r,   cp2x:  r*k, cp2y: -r,   smooth: true },
+        { x:  r, y:  0, cp1x:  r,   cp1y: -r*k,  cp2x:  r,   cp2y:  r*k, smooth: true },
+        { x:  0, y:  r, cp1x:  r*k, cp1y:  r,    cp2x: -r*k, cp2y:  r,   smooth: true },
+        { x: -r, y:  0, cp1x: -r,   cp1y:  r*k,  cp2x: -r,   cp2y: -r*k, smooth: true },
+      ];
+    }
+    const hw = s.width / 2, hh = s.height / 2;
+    if (type === 'square') {
+      return [
+        { x: -hw, y: -hh, cp1x: -hw, cp1y: -hh, cp2x: -hw, cp2y: -hh, smooth: false },
+        { x:  hw, y: -hh, cp1x:  hw, cp1y: -hh, cp2x:  hw, cp2y: -hh, smooth: false },
+        { x:  hw, y:  hh, cp1x:  hw, cp1y:  hh, cp2x:  hw, cp2y:  hh, smooth: false },
+        { x: -hw, y:  hh, cp1x: -hw, cp1y:  hh, cp2x: -hw, cp2y:  hh, smooth: false },
+      ];
+    }
+    // triangle: polygon(50% 0%, 0% 100%, 100% 100%)
+    return [
+      { x:   0, y: -hh, cp1x:   0, cp1y: -hh, cp2x:   0, cp2y: -hh, smooth: false },
+      { x:  hw, y:  hh, cp1x:  hw, cp1y:  hh, cp2x:  hw, cp2y:  hh, smooth: false },
+      { x: -hw, y:  hh, cp1x: -hw, cp1y:  hh, cp2x: -hw, cp2y:  hh, smooth: false },
+    ];
   }
 
   function applyTransform() {
-    if (type === 'path' && s.points.length) {
+    if (type === 'path' && s.points.length >= 3) {
       const bb  = getPathBBox(s.points);
       const pad = 50;
       s.width  = Math.max(80, bb.maxX - bb.minX + pad * 2);
@@ -548,7 +576,6 @@ function createShape(type, initState = {}) {
     wheel.style.left      = s.cx     + 'px';
     wheel.style.top       = s.cy     + 'px';
     wheel.style.transform = `translate(-50%, -50%) rotate(${s.ang}deg)`;
-    updatePropBoxPosition();
   }
   applyTransform();
 
@@ -560,94 +587,108 @@ function createShape(type, initState = {}) {
   wheel.addEventListener('pointerenter', () => wheel.classList.add('hovered'));
   wheel.addEventListener('pointerleave', () => wheel.classList.remove('hovered'));
 
-  // ── Cursor hint: edge = resize ──
+  // ── Cursor hint: corner = rotate, edge = resize, inside = grab ──
   shapeEl.addEventListener('pointermove', e => {
     if (s.mode) return;
-    if (type === 'path') {
-      const { lx, ly } = toLocal(e.clientX, e.clientY);
+    const { lx, ly } = toLocal(e.clientX, e.clientY);
+    if (type === 'path' && s.points.length >= 3) {
       shapeEl.style.cursor = isInsidePath(lx, ly) ? 'grab' : 'default';
       return;
     }
-    if (type === 'square') {
-      const { lx, ly } = toLocal(e.clientX, e.clientY);
-      const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 16;
-      const nearV = Math.abs(Math.abs(ly) - s.height / 2) < 16;
-      if (nearH && !nearV) shapeEl.style.cursor = 'ew-resize';
-      else if (nearV && !nearH) shapeEl.style.cursor = 'ns-resize';
-      else if (nearH && nearV) shapeEl.style.cursor = 'ew-resize';
-      else shapeEl.style.cursor = 'grab';
+    if (type === 'circle') {
+      const r = s.width / 2, dist = Math.hypot(lx, ly);
+      if (dist > r - 20) {
+        shapeEl.style.cursor = (Math.abs(lx) > r * 0.5 && Math.abs(ly) > r * 0.5)
+          ? ROTATE_CURSOR : 'ew-resize';
+      } else {
+        shapeEl.style.cursor = 'grab';
+      }
     } else {
-      const dist = Math.hypot(e.clientX - s.cx, e.clientY - s.cy);
-      shapeEl.style.cursor = dist > s.width / 2 - 16 ? 'ew-resize' : 'grab';
+      const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 20;
+      const nearV = Math.abs(Math.abs(ly) - s.height / 2) < 20;
+      if      (nearH && nearV) shapeEl.style.cursor = ROTATE_CURSOR;
+      else if (nearH)          shapeEl.style.cursor = 'ew-resize';
+      else if (nearV)          shapeEl.style.cursor = 'ns-resize';
+      else                     shapeEl.style.cursor = 'grab';
     }
   });
 
-  // ── Shape: drag or resize ──
+  // ── Shape: drag, resize, or rotate ──
   shapeEl.addEventListener('pointerdown', e => {
-    if (s.editMode) return;   // edit handles take over in edit mode
-    if (type === 'path') {
-      const { lx, ly } = toLocal(e.clientX, e.clientY);
+    if (s.editMode) return;
+    shapes.forEach(sh => sh.propBox && sh.propBox.classList.remove('open'));
+    const { lx, ly } = toLocal(e.clientX, e.clientY);
+
+    // Path shapes: hit-test against actual bezier curve
+    if (type === 'path' && s.points.length >= 3) {
       if (!isInsidePath(lx, ly)) { selectShape(null); return; }
-    }
-    selectShape(s);
-    if (type === 'path') {
+      selectShape(s);
       s.mode   = 'drag';
       s.dragOx = e.clientX - s.cx;
       s.dragOy = e.clientY - s.cy;
       shapeEl.setPointerCapture(e.pointerId);
-      e.stopPropagation();
-      e.preventDefault();
+      e.stopPropagation(); e.preventDefault();
       return;
     }
-    if (type === 'square') {
-      const { lx, ly } = toLocal(e.clientX, e.clientY);
-      const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 16;
-      const nearV = Math.abs(Math.abs(ly) - s.height / 2) < 16;
-      if (nearH || nearV) {
+
+    selectShape(s);
+
+    function startRotate() {
+      s.mode = 'rotate';
+      const startAng = Math.atan2(e.clientY - s.cy, e.clientX - s.cx) * (180 / Math.PI) + 90;
+      s.rotateOffset = s.ang - startAng;
+    }
+
+    if (type === 'circle') {
+      const r = s.width / 2, dist = Math.hypot(lx, ly);
+      if (dist > r - 20 && Math.abs(lx) > r * 0.5 && Math.abs(ly) > r * 0.5) {
+        startRotate();
+      } else if (dist > r - 20) {
         s.mode = 'resize';
-        s.resizeEdge = nearV && !nearH ? 'v' : 'h';
       } else {
-        s.mode   = 'drag';
-        s.dragOx = e.clientX - s.cx;
-        s.dragOy = e.clientY - s.cy;
+        s.mode = 'drag'; s.dragOx = e.clientX - s.cx; s.dragOy = e.clientY - s.cy;
       }
     } else {
-      const dist = Math.hypot(e.clientX - s.cx, e.clientY - s.cy);
-      if (dist > s.width / 2 - 16) {
+      // square / triangle — bounding-box corner detection
+      const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 20;
+      const nearV = Math.abs(Math.abs(ly) - s.height / 2) < 20;
+      if (nearH && nearV) {
+        startRotate();
+      } else if (type === 'square' && (nearH || nearV)) {
+        s.mode = 'resize';
+        s.resizeEdge = nearV && !nearH ? 'v' : 'h';
+      } else if (type !== 'square' && (nearH || nearV)) {
         s.mode = 'resize';
       } else {
-        s.mode   = 'drag';
-        s.dragOx = e.clientX - s.cx;
-        s.dragOy = e.clientY - s.cy;
+        s.mode = 'drag'; s.dragOx = e.clientX - s.cx; s.dragOy = e.clientY - s.cy;
       }
     }
     shapeEl.setPointerCapture(e.pointerId);
-    e.stopPropagation();
-    e.preventDefault();
+    e.stopPropagation(); e.preventDefault();
   });
 
-  // ── Path: double-click toggles edit mode ──
-  if (type === 'path') {
-    shapeEl.addEventListener('dblclick', e => {
-      if (s.editMode) exitEditMode(); else enterEditMode();
-      e.stopPropagation();
-    });
-  }
+  // ── Double-click toggles bezier edit mode (path shapes only) ──
+  shapeEl.addEventListener('dblclick', e => {
+    if (type !== 'path') { e.stopPropagation(); return; }
+    const { lx, ly } = toLocal(e.clientX, e.clientY);
+    if (!isInsidePath(lx, ly)) { e.stopPropagation(); return; }
+    if (s.editMode) exitEditMode();
+    else { selectShape(s); enterEditMode(); }
+    e.stopPropagation();
+  });
 
-  // ── Handle: rotate ──
-  handle.addEventListener('pointerdown', e => {
+  // ── Right-click opens property box ──
+  shapeEl.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (type === 'path' && s.points.length >= 3) {
+      const { lx, ly } = toLocal(e.clientX, e.clientY);
+      if (!isInsidePath(lx, ly)) return;
+    }
     selectShape(s);
-    s.mode = 'rotate';
-    handle.setPointerCapture(e.pointerId);
-    e.stopPropagation();
-    e.preventDefault();
-  });
-
-  // ── Handle: double-click → toggle prop box ──
-  handle.addEventListener('dblclick', e => {
-    propBox.classList.toggle('open');
-    updatePropBoxPosition();
-    e.stopPropagation();
+    propBox.classList.add('open');
+    propBox.style.left = (e.clientX + 8) + 'px';
+    propBox.style.top  = (e.clientY - 10) + 'px';
   });
 
   // ── Global pointer events (per shape) ──
@@ -659,7 +700,7 @@ function createShape(type, initState = {}) {
     } else if (s.mode === 'rotate') {
       const dx = e.clientX - s.cx;
       const dy = e.clientY - s.cy;
-      s.ang = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+      s.ang = Math.atan2(dy, dx) * (180 / Math.PI) + 90 + s.rotateOffset;
       applyTransform();
     } else if (s.mode === 'resize') {
       if (type === 'square') {
@@ -1019,8 +1060,11 @@ document.getElementById('saveSvg').addEventListener('click', () => {
   URL.revokeObjectURL(a.href);
 });
 
-// ── Deselect on canvas click ──
+// ── Deselect on canvas click + close prop boxes ──
 document.addEventListener('pointerdown', e => {
+  // Close all open prop boxes when clicking outside them
+  // (prop boxes have stopPropagation, so this only fires for outside clicks)
+  shapes.forEach(sh => sh.propBox && sh.propBox.classList.remove('open'));
   if (!e.target.closest('.wheel') && !e.target.closest('.prop-box') && !e.target.closest('.panel')) {
     selectShape(null);
   }
