@@ -87,7 +87,7 @@ body {
   transform: translateY(-50%);
   display: flex;
   align-items: stretch;
-  z-index: 20;
+  z-index: 1000;
   user-select: none;
   touch-action: none;
 }
@@ -428,7 +428,6 @@ input[type=range]::-moz-range-thumb {
 .save-row {
   display: flex;
   gap: 8px;
-  width: 130px;
 }
 
 .save-btn {

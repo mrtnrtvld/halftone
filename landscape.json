@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "field": { "pattern": "dots", "size": 2, "gap": 16 },
+  "shapes": [
+    {
+      "type": "square",
+      "cx": 720, "cy": 870, "ang": 0, "width": 1600, "height": 200,
+      "dotSize": 8, "spacing": 9, "pattern": "lines",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
+    },
+    {
+      "type": "square",
+      "cx": 720, "cy": 700, "ang": 0, "width": 1600, "height": 270,
+      "dotSize": 3, "spacing": 11, "pattern": "lines",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "type": "circle",
+      "cx": 260, "cy": 710, "ang": 0, "width": 560, "height": 560,
+      "dotSize": 5, "spacing": 9, "pattern": "dots",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "type": "circle",
+      "cx": 1080, "cy": 730, "ang": 0, "width": 520, "height": 520,
+      "dotSize": 4, "spacing": 10, "pattern": "dots",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "type": "triangle",
+      "cx": 420, "cy": 440, "ang": -4, "width": 480, "height": 420,
+      "dotSize": 3, "spacing": 9, "pattern": "lines",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "type": "triangle",
+      "cx": 860, "cy": 460, "ang": 5, "width": 420, "height": 380,
+      "dotSize": 2, "spacing": 8, "pattern": "lines",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "type": "triangle",
+      "cx": 640, "cy": 490, "ang": 0, "width": 560, "height": 500,
+      "dotSize": 5, "spacing": 7, "pattern": "lines",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
+    },
+    {
+      "type": "square",
+      "cx": 720, "cy": 558, "ang": 0, "width": 1600, "height": 22,
+      "dotSize": 2, "spacing": 4, "pattern": "dots",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
+    },
+    {
+      "type": "circle",
+      "cx": 1230, "cy": 155, "ang": 0, "width": 300, "height": 300,
+      "dotSize": 3, "spacing": 22, "pattern": "dots",
+      "solidBg": false, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "type": "circle",
+      "cx": 1230, "cy": 155, "ang": 0, "width": 165, "height": 165,
+      "dotSize": 13, "spacing": 18, "pattern": "dots",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "type": "triangle",
+      "cx": 148, "cy": 560, "ang": 0, "width": 95, "height": 210,
+      "dotSize": 2, "spacing": 5, "pattern": "dots",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
+    },
+    {
+      "type": "triangle",
+      "cx": 1258, "cy": 580, "ang": 0, "width": 85, "height": 195,
+      "dotSize": 2, "spacing": 5, "pattern": "dots",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
+    },
+    {
+      "type": "path",
+      "cx": 370, "cy": 175, "ang": 0, "width": 280, "height": 200,
+      "dotSize": 4, "spacing": 12, "pattern": "dots",
+      "solidBg": true, "inverted": false, "visible": true,
+      "points": [
+        { "x":   0, "y": -50, "cp1x": -50, "cp1y": -50, "cp2x":  50, "cp2y": -50, "smooth": true },
+        { "x":  90, "y":   0, "cp1x":  90, "cp1y": -28, "cp2x":  90, "cp2y":  28, "smooth": true },
+        { "x":   0, "y":  50, "cp1x":  50, "cp1y":  50, "cp2x": -50, "cp2y":  50, "smooth": true },
+        { "x": -90, "y":   0, "cp1x": -90, "cp1y":  28, "cp2x": -90, "cp2y": -28, "smooth": true }
+      ]
+    }
+  ]
+}

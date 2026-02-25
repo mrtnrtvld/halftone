@@ -95,24 +95,24 @@ function syncShapesFromDOM() {
 function createShape(type, initState = {}) {
   const n = shapes.length;   // capture before push
   const s = {
-    cx:      initState.cx ?? (window.innerWidth  / 2 + n * 30),
-    cy:      initState.cy ?? (window.innerHeight / 2 + n * 20),
-    ang:        0,
-    width:      220,
-    height:     220,
+    cx:      initState.cx      ?? (window.innerWidth  / 2 + n * 30),
+    cy:      initState.cy      ?? (window.innerHeight / 2 + n * 20),
+    ang:     initState.ang     ?? 0,
+    width:   initState.width   ?? 220,
+    height:  initState.height  ?? 220,
     resizeEdge: '',
-    dotSize:    4,
-    spacing:    8,
+    dotSize:    initState.dotSize  ?? 4,
+    spacing:    initState.spacing  ?? 8,
     mode:         null,
     dragOx:       0,
     dragOy:       0,
     rotateOffset: 0,
     type,
-    pattern: 'dots',
-    solidBg:  false,
-    inverted: false,
-    visible: true,
-    points:   initState.points ?? [],   // path-specific
+    pattern: initState.pattern  ?? 'dots',
+    solidBg: initState.solidBg  ?? false,
+    inverted: initState.inverted ?? false,
+    visible:  initState.visible  ?? true,
+    points:   initState.points  ?? [],   // path-specific
     editMode: false,
     editSvg:  null,
     wheel:   null,
@@ -184,13 +184,13 @@ function createShape(type, initState = {}) {
   propPatternBtns.className = 'pattern-btns';
 
   const propDotBtn  = document.createElement('button');
-  propDotBtn.className   = 'pattern-btn active';
+  propDotBtn.className   = s.pattern === 'dots' ? 'pattern-btn active' : 'pattern-btn';
   const propDotIcon = document.createElement('span');
   propDotIcon.className  = 'pattern-icon dots';
   propDotBtn.append(propDotIcon);
 
   const propLineBtn  = document.createElement('button');
-  propLineBtn.className  = 'pattern-btn';
+  propLineBtn.className  = s.pattern === 'lines' ? 'pattern-btn active' : 'pattern-btn';
   const propLineIcon = document.createElement('span');
   propLineIcon.className = 'pattern-icon lines';
   propLineBtn.append(propLineIcon);
@@ -218,11 +218,13 @@ function createShape(type, initState = {}) {
   bgBtn.className   = 'prop-toggle';
   bgBtn.textContent = '■';
   bgBtn.title       = 'Solid background';
+  bgBtn.classList.toggle('active', s.solidBg);
 
   const invBtn = document.createElement('button');
   invBtn.className   = 'prop-toggle';
   invBtn.textContent = '◑';
   invBtn.title       = 'Invert colours';
+  invBtn.classList.toggle('active', s.inverted);
 
   bgBtn.addEventListener('click', () => {
     s.solidBg = !s.solidBg;
@@ -237,7 +239,56 @@ function createShape(type, initState = {}) {
   });
 
   propToggleRow.append(bgBtn, invBtn);
-  propBox.append(propHeader, propSizeRow, propGapRow, propPatternBtns, propToggleRow);
+
+  // Angle row
+  const propAngSpan = document.createElement('span');
+  const propAngLabel = document.createElement('div');
+  propAngLabel.className = 'prop-label';
+  propAngLabel.append('Angle\u00a0', propAngSpan);
+  const propAngSlider = document.createElement('input');
+  propAngSlider.type  = 'range';
+  propAngSlider.min   = '-180';
+  propAngSlider.max   = '180';
+  propAngSlider.step  = '1';
+  propAngSlider.value = String(Math.round(((s.ang % 360) + 540) % 360 - 180));
+  propAngSpan.textContent = propAngSlider.value;
+  const propAngRow = document.createElement('div');
+  propAngRow.className = 'prop-slider-row';
+  propAngRow.append(propAngLabel, propAngSlider);
+
+  // Width row
+  const propWSpan = document.createElement('span');
+  propWSpan.textContent = Math.round(s.width);
+  const propWLabel = document.createElement('div');
+  propWLabel.className = 'prop-label';
+  propWLabel.append('W\u00a0', propWSpan);
+  const propWSlider = document.createElement('input');
+  propWSlider.type  = 'range';
+  propWSlider.min   = '20';
+  propWSlider.max   = '1400';
+  propWSlider.step  = '1';
+  propWSlider.value = String(Math.round(s.width));
+  const propWRow = document.createElement('div');
+  propWRow.className = 'prop-slider-row';
+  propWRow.append(propWLabel, propWSlider);
+
+  // Height row
+  const propHSpan = document.createElement('span');
+  propHSpan.textContent = Math.round(s.height);
+  const propHLabel = document.createElement('div');
+  propHLabel.className = 'prop-label';
+  propHLabel.append('H\u00a0', propHSpan);
+  const propHSlider = document.createElement('input');
+  propHSlider.type  = 'range';
+  propHSlider.min   = '20';
+  propHSlider.max   = '1400';
+  propHSlider.step  = '1';
+  propHSlider.value = String(Math.round(s.height));
+  const propHRow = document.createElement('div');
+  propHRow.className = 'prop-slider-row';
+  propHRow.append(propHLabel, propHSlider);
+
+  propBox.append(propHeader, propSizeRow, propGapRow, propPatternBtns, propToggleRow, propAngRow, propWRow, propHRow);
   document.body.append(propBox);
   s.propBox = propBox;
 
@@ -260,7 +311,7 @@ function createShape(type, initState = {}) {
 
   const visBtn = document.createElement('button');
   visBtn.className   = 'layer-btn';
-  visBtn.textContent = '●';
+  visBtn.textContent = s.visible ? '●' : '○';
   visBtn.title       = 'Toggle visibility';
   visBtn.addEventListener('click', () => {
     s.visible = !s.visible;
@@ -475,6 +526,49 @@ function createShape(type, initState = {}) {
     propGapSpan.textContent = s.spacing;
     applyShapePattern();
   });
+
+  propAngSlider.addEventListener('input', e => {
+    s.ang = +e.target.value;
+    propAngSpan.textContent = e.target.value;
+    applyTransform();
+  });
+
+  propWSlider.addEventListener('input', e => {
+    const newW = +e.target.value;
+    if (type === 'path' && s.points.length >= 3) {
+      const bb = getPathBBox(s.points);
+      const currentInnerW = bb.maxX - bb.minX;
+      const newInnerW = Math.max(1, newW - 100);
+      if (currentInnerW > 0) {
+        const ratio = newInnerW / currentInnerW;
+        s.points = s.points.map(p => ({
+          ...p, x: p.x * ratio, cp1x: p.cp1x * ratio, cp2x: p.cp2x * ratio,
+        }));
+      }
+    } else {
+      s.width = newW;
+    }
+    applyTransform();
+  });
+
+  propHSlider.addEventListener('input', e => {
+    const newH = +e.target.value;
+    if (type === 'path' && s.points.length >= 3) {
+      const bb = getPathBBox(s.points);
+      const currentInnerH = bb.maxY - bb.minY;
+      const newInnerH = Math.max(1, newH - 100);
+      if (currentInnerH > 0) {
+        const ratio = newInnerH / currentInnerH;
+        s.points = s.points.map(p => ({
+          ...p, y: p.y * ratio, cp1y: p.cp1y * ratio, cp2y: p.cp2y * ratio,
+        }));
+      }
+    } else {
+      s.height = newH;
+    }
+    applyTransform();
+  });
+
   applyShapePattern();
 
   // ── Transform ──
@@ -576,23 +670,62 @@ function createShape(type, initState = {}) {
     wheel.style.left      = s.cx     + 'px';
     wheel.style.top       = s.cy     + 'px';
     wheel.style.transform = `translate(-50%, -50%) rotate(${s.ang}deg)`;
+    // Sync prop box sliders
+    const normAng = Math.round(((s.ang % 360) + 540) % 360 - 180);
+    propAngSlider.value     = normAng;
+    propAngSpan.textContent = normAng;
+    propWSlider.value     = Math.round(s.width);
+    propWSpan.textContent = Math.round(s.width);
+    propHSlider.value     = Math.round(s.height);
+    propHSpan.textContent = Math.round(s.height);
   }
   applyTransform();
 
-  // Expose on s for keyboard handler
-  s.applyTransform = applyTransform;
-  s.deleteShape    = deleteShape;
+  // Expose on s for keyboard handler and load
+  s.applyTransform    = applyTransform;
+  s.applyShapePattern = applyShapePattern;
+  s.deleteShape       = deleteShape;
+
+  if (!s.visible) wheel.style.display = 'none';
 
   // ── Hover: fade outline + handle ──
   wheel.addEventListener('pointerenter', () => wheel.classList.add('hovered'));
   wheel.addEventListener('pointerleave', () => wheel.classList.remove('hovered'));
+
+  // ── Path shape: corner rotation via wheel (fires when clip-path restricts shapeEl events) ──
+  if (type === 'path') {
+    wheel.addEventListener('pointermove', e => {
+      if (s.mode || s.points.length < 3) return;
+      const { lx, ly } = toLocal(e.clientX, e.clientY);
+      const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 20;
+      const nearV = Math.abs(Math.abs(ly) - s.height / 2) < 20;
+      wheel.style.cursor = (nearH && nearV) ? ROTATE_CURSOR : '';
+    });
+    wheel.addEventListener('pointerdown', e => {
+      if (s.editMode || s.points.length < 3) return;
+      const { lx, ly } = toLocal(e.clientX, e.clientY);
+      const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 20;
+      const nearV = Math.abs(Math.abs(ly) - s.height / 2) < 20;
+      if (!(nearH && nearV)) return;
+      shapes.forEach(sh => sh.propBox && sh.propBox.classList.remove('open'));
+      selectShape(s);
+      s.mode = 'rotate';
+      const startAng = Math.atan2(e.clientY - s.cy, e.clientX - s.cx) * (180 / Math.PI) + 90;
+      s.rotateOffset = s.ang - startAng;
+      wheel.setPointerCapture(e.pointerId);
+      e.stopPropagation(); e.preventDefault();
+    });
+  }
 
   // ── Cursor hint: corner = rotate, edge = resize, inside = grab ──
   shapeEl.addEventListener('pointermove', e => {
     if (s.mode) return;
     const { lx, ly } = toLocal(e.clientX, e.clientY);
     if (type === 'path' && s.points.length >= 3) {
-      shapeEl.style.cursor = isInsidePath(lx, ly) ? 'grab' : 'default';
+      const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 20;
+      const nearV = Math.abs(Math.abs(ly) - s.height / 2) < 20;
+      if (nearH && nearV) shapeEl.style.cursor = ROTATE_CURSOR;
+      else shapeEl.style.cursor = isInsidePath(lx, ly) ? 'grab' : 'default';
       return;
     }
     if (type === 'circle') {
@@ -619,8 +752,19 @@ function createShape(type, initState = {}) {
     shapes.forEach(sh => sh.propBox && sh.propBox.classList.remove('open'));
     const { lx, ly } = toLocal(e.clientX, e.clientY);
 
-    // Path shapes: hit-test against actual bezier curve
+    // Path shapes: corner = rotate, inside = drag, outside = deselect
     if (type === 'path' && s.points.length >= 3) {
+      const nearH = Math.abs(Math.abs(lx) - s.width  / 2) < 20;
+      const nearV = Math.abs(Math.abs(ly) - s.height / 2) < 20;
+      if (nearH && nearV) {
+        selectShape(s);
+        s.mode = 'rotate';
+        const startAng = Math.atan2(e.clientY - s.cy, e.clientX - s.cx) * (180 / Math.PI) + 90;
+        s.rotateOffset = s.ang - startAng;
+        shapeEl.setPointerCapture(e.pointerId);
+        e.stopPropagation(); e.preventDefault();
+        return;
+      }
       if (!isInsidePath(lx, ly)) { selectShape(null); return; }
       selectShape(s);
       s.mode   = 'drag';
@@ -1058,6 +1202,103 @@ document.getElementById('saveSvg').addEventListener('click', () => {
   a.download = 'halftone.svg';
   a.click();
   URL.revokeObjectURL(a.href);
+});
+
+document.getElementById('saveJson').addEventListener('click', () => {
+  const state = {
+    version: 1,
+    field: {
+      pattern: fieldPattern,
+      size:    +fieldSizeSlider.value,
+      gap:     +fieldGapSlider.value,
+    },
+    // shapes[0] = bottom layer, shapes[last] = top layer
+    shapes: shapes.map(s => ({
+      type:     s.type,
+      cx:       s.cx,
+      cy:       s.cy,
+      ang:      s.ang,
+      width:    s.width,
+      height:   s.height,
+      dotSize:  s.dotSize,
+      spacing:  s.spacing,
+      pattern:  s.pattern,
+      solidBg:  s.solidBg,
+      inverted: s.inverted,
+      visible:  s.visible,
+      points:   s.points,
+    })),
+  };
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'halftone.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById('loadJson').addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type   = 'file';
+  input.accept = '.json,application/json';
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        loadState(JSON.parse(reader.result));
+      } catch {
+        alert('Could not load file — invalid format.');
+      }
+    };
+    reader.readAsText(file);
+  });
+  input.click();
+});
+
+function loadState(state) {
+  if (!state || state.version !== 1) { alert('Unsupported file version.'); return; }
+
+  // Clear everything
+  selectShape(null);
+  [...shapes].forEach(s => s.deleteShape());
+
+  // Restore field settings
+  if (state.field) {
+    fieldSizeSlider.value    = state.field.size;
+    fieldSizeVal.textContent = state.field.size;
+    fieldGapSlider.value     = state.field.gap;
+    fieldGapVal.textContent  = state.field.gap;
+    setFieldPattern(state.field.pattern);
+  }
+
+  // Recreate shapes bottom-to-top (shapes[0] = bottom)
+  for (const sd of state.shapes) {
+    createShape(sd.type, {
+      cx:       sd.cx,
+      cy:       sd.cy,
+      ang:      sd.ang,
+      width:    sd.width,
+      height:   sd.height,
+      dotSize:  sd.dotSize,
+      spacing:  sd.spacing,
+      pattern:  sd.pattern,
+      solidBg:  sd.solidBg,
+      inverted: sd.inverted,
+      visible:  sd.visible,
+      points:   sd.points ?? [],
+    });
+    // Apply pattern visuals (sliders already initialized from initState)
+    shapes[shapes.length - 1].applyShapePattern();
+  }
+}
+
+document.getElementById('loadExample').addEventListener('click', () => {
+  fetch('./landscape.json')
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(loadState)
+    .catch(() => alert('Could not load example.'));
 });
 
 // ── Deselect on canvas click + close prop boxes ──
