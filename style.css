@@ -78,26 +78,6 @@ body {
   filter: drop-shadow(0 0 5px rgba(0,0,0,0.85));
 }
 
-.wheel.selected .handle { opacity: 1; }
-
-/* ── HANDLE ── */
-.handle {
-  position: absolute;
-  left: 50%;
-  top: 10px;
-  transform: translate(-50%, -50%);
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  border: 2px solid #000;
-  cursor: grab;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.wheel.hovered .handle {
-  opacity: 1;
-}
 
 /* ── RIGHT PANEL ── */
 .panel {
@@ -107,7 +87,7 @@ body {
   transform: translateY(-50%);
   display: flex;
   align-items: stretch;
-  z-index: 20;
+  z-index: 1000;
   user-select: none;
   touch-action: none;
 }
@@ -448,7 +428,6 @@ input[type=range]::-moz-range-thumb {
 .save-row {
   display: flex;
   gap: 8px;
-  width: 130px;
 }
 
 .save-btn {

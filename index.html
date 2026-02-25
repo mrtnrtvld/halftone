@@ -55,10 +55,15 @@
 
       <div class="panel-divider"></div>
 
-      <div class="panel-label">Save</div>
+      <div class="panel-label">Export</div>
       <div class="save-row">
         <button class="save-btn" id="savePng">PNG</button>
         <button class="save-btn" id="saveSvg">SVG</button>
+        <button class="save-btn" id="saveJson">JSON</button>
+      </div>
+      <div class="save-row" style="margin-top:6px">
+        <button class="save-btn" id="loadJson">Load JSON</button>
+        <button class="save-btn" id="loadExample">Demo</button>
       </div>
 
       <div class="panel-divider"></div>
@@ -93,7 +98,7 @@
       <p>Hover over a shape to reveal the circular handle near its top edge. Drag the handle to rotate the shape freely.</p>
 
       <h3>Density &amp; pattern</h3>
-      <p>Double-click the circular handle to open the property box for that shape. Use <em>Size</em> to control dot diameter or line thickness, <em>Gap</em> to set spacing, and the pattern buttons to switch between dots and lines. Toggle <strong>■</strong> for a solid background and <strong>◑</strong> to invert colours.</p>
+      <p>Right-click a shape to open its property box. Use <em>Size</em> to control dot diameter or line thickness, <em>Gap</em> to set spacing, and the pattern buttons to switch between dots and lines. Toggle <strong>■</strong> for a solid background and <strong>◑</strong> to invert colours. Use <em>Angle</em> to rotate precisely, and <em>W</em> / <em>H</em> to resize.</p>
 
       <h3>Freeform path</h3>
       <p>Click the pen icon to start drawing. Each click places a corner point; click and drag to create a smooth curve point (handles appear). Click the first point again, or press <strong>Enter</strong>, to close the shape. Press <strong>Escape</strong> to cancel. After closing, double-click the shape to enter edit mode — drag anchor squares to move points, drag handle circles to adjust curves. Press <strong>Escape</strong> to exit edit mode.</p>
@@ -105,9 +110,11 @@
       <h3>Layers</h3>
       <p>Each shape is listed under Layers. The top entry is the frontmost shape. Drag entries to reorder. Click ● to toggle visibility, × to delete.</p>
 
-      <h3>Saving</h3>
+      <h3>Saving &amp; loading</h3>
       <p><strong>PNG</strong> — exports a raster image; white areas are saved as transparent.<br>
-      <strong>SVG</strong> — exports a scalable vector file with transparent background.</p>
+      <strong>SVG</strong> — exports a scalable vector file with transparent background.<br>
+      <strong>JSON</strong> — saves the full project (all shapes, settings, and layers) as a file that can be reloaded.<br>
+      <strong>Load JSON</strong> — opens a previously saved project file, replacing the current canvas.</p>
     </div>
   </div>
 
