@@ -294,6 +294,25 @@ function createShape(type, initState = {}) {
 
   propBox.addEventListener('pointerdown', e => e.stopPropagation());
 
+  // ── Prop box drag ──
+  propHeader.addEventListener('pointerdown', e => {
+    if (e.target === propClose) return;
+    e.preventDefault();
+    const ox = e.clientX - propBox.offsetLeft;
+    const oy = e.clientY - propBox.offsetTop;
+    propHeader.setPointerCapture(e.pointerId);
+    function onMove(me) {
+      propBox.style.left = (me.clientX - ox) + 'px';
+      propBox.style.top  = (me.clientY - oy) + 'px';
+    }
+    function onUp() {
+      propHeader.removeEventListener('pointermove', onMove);
+      propHeader.removeEventListener('pointerup',   onUp);
+    }
+    propHeader.addEventListener('pointermove', onMove);
+    propHeader.addEventListener('pointerup',   onUp);
+  });
+
   // ── Layer entry ──
   const layerEntry = document.createElement('div');
   layerEntry.className = 'layer-entry';

@@ -1,90 +1,156 @@
 {
   "version": 1,
-  "field": { "pattern": "dots", "size": 2, "gap": 16 },
+  "field": { "pattern": "dots", "size": 2, "gap": 20 },
   "shapes": [
     {
-      "type": "square",
-      "cx": 720, "cy": 870, "ang": 0, "width": 1600, "height": 200,
-      "dotSize": 8, "spacing": 9, "pattern": "lines",
+      "comment": "sky — medium gray base",
+      "type": "square", "cx": 720, "cy": 310, "ang": 0, "width": 1600, "height": 580,
+      "dotSize": 3, "spacing": 13, "pattern": "dots",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "comment": "ground — dense dark lines",
+      "type": "square", "cx": 720, "cy": 825, "ang": 0, "width": 1600, "height": 250,
+      "dotSize": 7, "spacing": 8, "pattern": "lines",
       "solidBg": true, "inverted": true, "visible": true, "points": []
     },
     {
-      "type": "square",
-      "cx": 720, "cy": 700, "ang": 0, "width": 1600, "height": 270,
-      "dotSize": 3, "spacing": 11, "pattern": "lines",
+      "comment": "ground surface — medium strip",
+      "type": "square", "cx": 720, "cy": 708, "ang": 0, "width": 1600, "height": 56,
+      "dotSize": 5, "spacing": 9, "pattern": "lines",
       "solidBg": true, "inverted": false, "visible": true, "points": []
     },
     {
-      "type": "circle",
-      "cx": 260, "cy": 710, "ang": 0, "width": 560, "height": 560,
-      "dotSize": 5, "spacing": 9, "pattern": "dots",
+      "comment": "left structural block — main body",
+      "type": "square", "cx": 195, "cy": 490, "ang": 0, "width": 390, "height": 820,
+      "dotSize": 5, "spacing": 9, "pattern": "lines",
       "solidBg": true, "inverted": false, "visible": true, "points": []
     },
     {
-      "type": "circle",
-      "cx": 1080, "cy": 730, "ang": 0, "width": 520, "height": 520,
+      "comment": "right structural block — main body",
+      "type": "square", "cx": 1245, "cy": 490, "ang": 0, "width": 390, "height": 820,
+      "dotSize": 5, "spacing": 9, "pattern": "lines",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "comment": "top overhanging mass — medium dots",
+      "type": "square", "cx": 720, "cy": 155, "ang": 0, "width": 1600, "height": 310,
       "dotSize": 4, "spacing": 10, "pattern": "dots",
       "solidBg": true, "inverted": false, "visible": true, "points": []
     },
     {
-      "type": "triangle",
-      "cx": 420, "cy": 440, "ang": -4, "width": 480, "height": 420,
-      "dotSize": 3, "spacing": 9, "pattern": "lines",
+      "comment": "top mass — very dark upper band",
+      "type": "square", "cx": 720, "cy": 42, "ang": 0, "width": 1600, "height": 84,
+      "dotSize": 6, "spacing": 7, "pattern": "dots",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
+    },
+    {
+      "comment": "aperture — outermost ring, darkest",
+      "type": "circle", "cx": 720, "cy": 480, "ang": 0, "width": 480, "height": 480,
+      "dotSize": 6, "spacing": 7, "pattern": "dots",
       "solidBg": true, "inverted": false, "visible": true, "points": []
     },
     {
-      "type": "triangle",
-      "cx": 860, "cy": 460, "ang": 5, "width": 420, "height": 380,
-      "dotSize": 2, "spacing": 8, "pattern": "lines",
+      "comment": "aperture — second ring",
+      "type": "circle", "cx": 720, "cy": 480, "ang": 0, "width": 370, "height": 370,
+      "dotSize": 5, "spacing": 9, "pattern": "dots",
       "solidBg": true, "inverted": false, "visible": true, "points": []
     },
     {
-      "type": "triangle",
-      "cx": 640, "cy": 490, "ang": 0, "width": 560, "height": 500,
-      "dotSize": 5, "spacing": 7, "pattern": "lines",
-      "solidBg": true, "inverted": true, "visible": true, "points": []
-    },
-    {
-      "type": "square",
-      "cx": 720, "cy": 558, "ang": 0, "width": 1600, "height": 22,
-      "dotSize": 2, "spacing": 4, "pattern": "dots",
-      "solidBg": true, "inverted": true, "visible": true, "points": []
-    },
-    {
-      "type": "circle",
-      "cx": 1230, "cy": 155, "ang": 0, "width": 300, "height": 300,
-      "dotSize": 3, "spacing": 22, "pattern": "dots",
-      "solidBg": false, "inverted": false, "visible": true, "points": []
-    },
-    {
-      "type": "circle",
-      "cx": 1230, "cy": 155, "ang": 0, "width": 165, "height": 165,
-      "dotSize": 13, "spacing": 18, "pattern": "dots",
+      "comment": "aperture — third ring, medium",
+      "type": "circle", "cx": 720, "cy": 480, "ang": 0, "width": 270, "height": 270,
+      "dotSize": 4, "spacing": 11, "pattern": "dots",
       "solidBg": true, "inverted": false, "visible": true, "points": []
     },
     {
-      "type": "triangle",
-      "cx": 148, "cy": 560, "ang": 0, "width": 95, "height": 210,
-      "dotSize": 2, "spacing": 5, "pattern": "dots",
+      "comment": "aperture — fourth ring, light",
+      "type": "circle", "cx": 720, "cy": 480, "ang": 0, "width": 180, "height": 180,
+      "dotSize": 3, "spacing": 16, "pattern": "dots",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "comment": "aperture — core, dark void (inverted)",
+      "type": "circle", "cx": 720, "cy": 480, "ang": 0, "width": 80, "height": 80,
+      "dotSize": 5, "spacing": 7, "pattern": "dots",
       "solidBg": true, "inverted": true, "visible": true, "points": []
     },
     {
-      "type": "triangle",
-      "cx": 1258, "cy": 580, "ang": 0, "width": 85, "height": 195,
-      "dotSize": 2, "spacing": 5, "pattern": "dots",
+      "comment": "left block — shadow face, outer edge",
+      "type": "square", "cx": 52, "cy": 490, "ang": 0, "width": 104, "height": 820,
+      "dotSize": 6, "spacing": 7, "pattern": "lines",
       "solidBg": true, "inverted": true, "visible": true, "points": []
     },
     {
-      "type": "path",
-      "cx": 370, "cy": 175, "ang": 0, "width": 280, "height": 200,
-      "dotSize": 4, "spacing": 12, "pattern": "dots",
-      "solidBg": true, "inverted": false, "visible": true,
-      "points": [
-        { "x":   0, "y": -50, "cp1x": -50, "cp1y": -50, "cp2x":  50, "cp2y": -50, "smooth": true },
-        { "x":  90, "y":   0, "cp1x":  90, "cp1y": -28, "cp2x":  90, "cp2y":  28, "smooth": true },
-        { "x":   0, "y":  50, "cp1x":  50, "cp1y":  50, "cp2x": -50, "cp2y":  50, "smooth": true },
-        { "x": -90, "y":   0, "cp1x": -90, "cp1y":  28, "cp2x": -90, "cp2y": -28, "smooth": true }
-      ]
+      "comment": "right block — shadow face, outer edge",
+      "type": "square", "cx": 1388, "cy": 490, "ang": 0, "width": 104, "height": 820,
+      "dotSize": 6, "spacing": 7, "pattern": "lines",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
+    },
+    {
+      "comment": "left block — lit inner face",
+      "type": "square", "cx": 358, "cy": 490, "ang": 0, "width": 64, "height": 820,
+      "dotSize": 3, "spacing": 16, "pattern": "lines",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "comment": "right block — lit inner face",
+      "type": "square", "cx": 1082, "cy": 490, "ang": 0, "width": 64, "height": 820,
+      "dotSize": 3, "spacing": 16, "pattern": "lines",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "comment": "channel — very light horizontal band",
+      "type": "square", "cx": 720, "cy": 480, "ang": 0, "width": 660, "height": 118,
+      "dotSize": 2, "spacing": 22, "pattern": "dots",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "comment": "channel ceiling — shadow strip",
+      "type": "square", "cx": 720, "cy": 422, "ang": 0, "width": 660, "height": 16,
+      "dotSize": 5, "spacing": 7, "pattern": "dots",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
+    },
+    {
+      "comment": "channel floor — shadow strip",
+      "type": "square", "cx": 720, "cy": 538, "ang": 0, "width": 660, "height": 16,
+      "dotSize": 5, "spacing": 7, "pattern": "dots",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
+    },
+    {
+      "comment": "top mass — underside shadow line",
+      "type": "square", "cx": 720, "cy": 308, "ang": 0, "width": 1600, "height": 12,
+      "dotSize": 5, "spacing": 7, "pattern": "dots",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
+    },
+    {
+      "comment": "diagonal brace — left, angled structural beam",
+      "type": "square", "cx": 240, "cy": 345, "ang": -20, "width": 540, "height": 34,
+      "dotSize": 4, "spacing": 9, "pattern": "lines",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "comment": "diagonal brace — right",
+      "type": "square", "cx": 1200, "cy": 345, "ang": 20, "width": 540, "height": 34,
+      "dotSize": 4, "spacing": 9, "pattern": "lines",
+      "solidBg": true, "inverted": false, "visible": true, "points": []
+    },
+    {
+      "comment": "thin vertical column — left",
+      "type": "square", "cx": 438, "cy": 555, "ang": 0, "width": 10, "height": 430,
+      "dotSize": 5, "spacing": 7, "pattern": "dots",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
+    },
+    {
+      "comment": "thin vertical column — right",
+      "type": "square", "cx": 1002, "cy": 555, "ang": 0, "width": 10, "height": 430,
+      "dotSize": 5, "spacing": 7, "pattern": "dots",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
+    },
+    {
+      "comment": "full-width separation line at top/structure junction",
+      "type": "square", "cx": 720, "cy": 314, "ang": 0, "width": 1600, "height": 6,
+      "dotSize": 2, "spacing": 3, "pattern": "dots",
+      "solidBg": true, "inverted": true, "visible": true, "points": []
     }
   ]
 }

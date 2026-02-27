@@ -116,8 +116,8 @@ body {
   border: 2px solid #000;
   border-left: none;
   padding: 20px 16px;
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
+  height: calc(100vh - 40px);
+  overflow: hidden;
 }
 
 .panel.collapsed .panel-body {
@@ -270,7 +270,9 @@ input[type=range]::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-height: 8px;
+  min-height: 0;
+  flex: 1 1 0;
+  overflow-y: auto;
 }
 
 .layer-entry {
@@ -352,6 +354,7 @@ input[type=range]::-moz-range-thumb {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  cursor: move;
 }
 
 .prop-label {
